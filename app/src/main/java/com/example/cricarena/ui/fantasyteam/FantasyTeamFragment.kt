@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.cricarena.R
 import com.example.cricarena.data.model.FantasyPlayer
 import com.example.cricarena.databinding.FragmentFantasyTeamBinding
+import com.google.android.material.snackbar.Snackbar
 
 class FantasyTeamFragment : Fragment() {
 
@@ -68,10 +69,12 @@ class FantasyTeamFragment : Fragment() {
             setLoading(false)
             if (error != null) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
+                Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
                 return@fetchPlayersFromMatch
             }
             players = fetchedPlayers
             adapter.submitPlayers(players, selectedPlayerIds, captainId, viceCaptainId)
+            binding.textEmptyFantasyPlayers.visibility = if (players.isEmpty()) View.VISIBLE else View.GONE
         }
     }
 
@@ -139,8 +142,10 @@ class FantasyTeamFragment : Fragment() {
             setLoading(false)
             if (success) {
                 Toast.makeText(requireContext(), R.string.team_saved_success, Toast.LENGTH_SHORT).show()
+                Snackbar.make(binding.root, R.string.team_saved_success, Snackbar.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(requireContext(), error ?: getString(R.string.error_save_team), Toast.LENGTH_LONG).show()
+                Snackbar.make(binding.root, error ?: getString(R.string.error_save_team), Snackbar.LENGTH_LONG).show()
             }
         }
     }
@@ -151,6 +156,7 @@ class FantasyTeamFragment : Fragment() {
             selectedPlayerIds.size,
             MAX_PLAYERS
         )
+        binding.textEmptyFantasyPlayers.visibility = if (players.isEmpty()) View.VISIBLE else View.GONE
         adapter.submitPlayers(players, selectedPlayerIds, captainId, viceCaptainId)
     }
 

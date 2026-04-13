@@ -10,6 +10,7 @@
         android:id="@+id/toolbarHome"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="@drawable/bg_header_gradient"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -17,7 +18,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:menu="@menu/home_toolbar_menu"
         app:title="@string/app_name"
-        app:titleTextColor="@color/textPrimary" />
+        app:titleTextColor="@color/headerTextOnGradient" />
 
     <HorizontalScrollView
         android:id="@+id/filterScroll"
@@ -91,5 +92,28 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/filterScroll"
         tools:listitem="@layout/item_match" />
+
+    <TextView
+        android:id="@+id/textEmptyMatches"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_matches_found"
+        android:textColor="@color/textSecondary"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/recyclerMatches"
+        app:layout_constraintEnd_toEndOf="@id/recyclerMatches"
+        app:layout_constraintStart_toStartOf="@id/recyclerMatches"
+        app:layout_constraintTop_toTopOf="@id/recyclerMatches" />
+
+    <ProgressBar
+        android:id="@+id/progressHome"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/recyclerMatches"
+        app:layout_constraintEnd_toEndOf="@id/recyclerMatches"
+        app:layout_constraintStart_toStartOf="@id/recyclerMatches"
+        app:layout_constraintTop_toTopOf="@id/recyclerMatches" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

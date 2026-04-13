@@ -12,6 +12,38 @@
         <item name="android:windowBackground">@color/background</item>
     </style>
 
+    <style name="Widget.CricArena.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">18dp</item>
+        <item name="cardElevation">6dp</item>
+    </style>
+
+    <style name="Widget.CricArena.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.CricArena.Button</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Widget.CricArena.OutlinedButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.CricArena.Button</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Widget.CricArena.CircleButton" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.CricArena.FullPill</item>
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Widget.CricArena.CircleButton.Extra" parent="Widget.CricArena.CircleButton">
+        <item name="backgroundTint">@color/accent</item>
+    </style>
+
+    <style name="Widget.CricArena.CircleButton.Danger" parent="Widget.CricArena.CircleButton">
+        <item name="backgroundTint">@color/liveRed</item>
+    </style>
+
     <style name="Widget.CricArena.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@color/primary</item>
         <item name="shapeAppearance">@style/ShapeAppearance.CricArena.FullPill</item>
@@ -26,5 +58,10 @@
     <style name="ShapeAppearance.CricArena.FullPill" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ShapeAppearance.CricArena.Button" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
     </style>
 </resources>

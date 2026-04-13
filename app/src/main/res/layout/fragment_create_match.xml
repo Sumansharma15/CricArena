@@ -15,13 +15,14 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/surface"
+            app:cardBackgroundColor="@android:color/transparent"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_header_gradient"
                 android:orientation="vertical"
                 android:padding="18dp">
 
@@ -29,7 +30,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/create_match_title"
-                    android:textColor="@color/textPrimary"
+                    android:textColor="@color/headerTextOnGradient"
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
@@ -38,7 +39,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/create_match_subtitle"
-                    android:textColor="@color/textSecondary"
+                    android:textColor="@color/headerTextOnGradient"
                     android:textSize="13sp" />
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -61,7 +62,7 @@
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:hint="@string/team_a_name">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -76,7 +77,7 @@
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:hint="@string/team_b_name">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -91,7 +92,7 @@
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:hint="@string/match_type">
 
                     <AutoCompleteTextView
@@ -107,7 +108,7 @@
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:hint="@string/start_date_time">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -145,11 +146,37 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonAddPlayer"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    style="@style/Widget.CricArena.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:text="@string/add_player" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/textTeamACount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/textSecondary"
+                        android:textStyle="bold"
+                        tools:text="Team A: 0 / 11" />
+
+                    <TextView
+                        android:id="@+id/textTeamBCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textColor="@color/textSecondary"
+                        android:textStyle="bold"
+                        tools:text="Team B: 0 / 11" />
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerPlayers"
@@ -159,6 +186,23 @@
                     android:nestedScrollingEnabled="false"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:listitem="@layout/item_player" />
+
+                <TextView
+                    android:id="@+id/textEmptyPlayers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/no_players_added"
+                    android:textColor="@color/textSecondary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonSaveTeam"
+                    style="@style/Widget.CricArena.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/save_team_to_cloud"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -177,60 +221,80 @@
                 android:padding="18dp">
 
                 <TextView
+                    android:id="@+id/textLiveMatchTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/scoring_rules"
+                    android:text="@string/live_scoring"
                     android:textColor="@color/textPrimary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/inputLayoutRuns"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                <TextView
+                    android:id="@+id/textLiveScore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/live_score_placeholder"
+                    android:textColor="@color/primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textCurrentBatsman"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/current_batsman_placeholder"
+                    android:textColor="@color/textSecondary" />
+
+                <TextView
+                    android:id="@+id/textCurrentBowler"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/current_bowler_placeholder"
+                    android:textColor="@color/textSecondary" />
+
+                <RadioGroup
+                    android:id="@+id/radioGroupTeams"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:hint="@string/runs_points">
+                    android:orientation="horizontal">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/inputRuns"
-                        android:layout_width="match_parent"
+                    <RadioButton
+                        android:id="@+id/radioTeamA"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:inputType="number"
-                        tools:text="1" />
-                </com.google.android.material.textfield.TextInputLayout>
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="@string/team_a_short" />
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/inputLayoutWickets"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    <RadioButton
+                        android:id="@+id/radioTeamB"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/team_b_short" />
+                </RadioGroup>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerLivePlayers"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:hint="@string/wickets_points">
+                    android:nestedScrollingEnabled="false"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/item_live_player" />
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/inputWickets"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="number"
-                        tools:text="25" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/inputLayoutCatch"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/textEmptyLivePlayers"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:hint="@string/catch_points">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/inputCatch"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="number"
-                        tools:text="8" />
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_marginTop="8dp"
+                    android:text="@string/no_players_found"
+                    android:textColor="@color/textSecondary"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -244,16 +308,17 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonSaveDraft"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/Widget.CricArena.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/save_draft" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonPublishMatch"
+                style="@style/Widget.CricArena.Button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="8dp"
                 android:text="@string/publish_match" />
         </LinearLayout>
 

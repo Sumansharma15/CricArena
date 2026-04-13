@@ -56,6 +56,13 @@ class FantasyPlayerAdapter(
 
             binding.textPlayerName.text = player.name
             binding.textPlayerRole.text = player.role
+            val roleIcon = when (player.role.lowercase()) {
+                "batsman" -> R.drawable.ic_role_bat
+                "bowler" -> R.drawable.ic_role_ball
+                "wicketkeeper" -> R.drawable.ic_role_gloves
+                else -> R.drawable.ic_role_allrounder
+            }
+            binding.textPlayerRole.setCompoundDrawablesRelativeWithIntrinsicBounds(roleIcon, 0, 0, 0)
             binding.textSelectedState.text =
                 if (isSelected) context.getString(R.string.selected_label) else context.getString(R.string.tap_to_select)
 

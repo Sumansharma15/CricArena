@@ -27,8 +27,10 @@ class FantasyTeamViewModel(
                     val name = map["name"]?.toString().orEmpty()
                     val role = map["role"]?.toString().orEmpty()
                     if (name.isBlank() || role.isBlank()) return@mapIndexedNotNull null
+                    val stableId = map["id"]?.toString()?.takeIf { it.isNotBlank() }
+                        ?: "$matchId-$index-${name.lowercase()}"
                     FantasyPlayer(
-                        id = "$matchId-$index-${name.lowercase()}",
+                        id = stableId,
                         name = name,
                         role = role
                     )

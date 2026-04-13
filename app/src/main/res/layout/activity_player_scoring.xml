@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:padding="16dp">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarScoring"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_header_gradient"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@android:drawable/ic_menu_revert"
+        app:titleTextColor="@color/headerTextOnGradient" />
+
+    <LinearLayout
+        android:id="@+id/layoutRunButtons"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbarScoring">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonRun0"
+            style="@style/Widget.CricArena.CircleButton"
+            android:text="0" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonRun1"
+            style="@style/Widget.CricArena.CircleButton"
+            android:layout_marginStart="8dp"
+            android:text="1" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonRun2"
+            style="@style/Widget.CricArena.CircleButton"
+            android:layout_marginStart="8dp"
+            android:text="2" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonRun3"
+            style="@style/Widget.CricArena.CircleButton"
+            android:layout_marginStart="8dp"
+            android:text="3" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonRun4"
+            style="@style/Widget.CricArena.CircleButton"
+            android:layout_marginStart="8dp"
+            android:text="4" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonRun6"
+            style="@style/Widget.CricArena.CircleButton"
+            android:layout_marginStart="8dp"
+            android:text="6" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textExtras"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/extras"
+        android:textColor="@color/textPrimary"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutRunButtons" />
+
+    <LinearLayout
+        android:id="@+id/layoutExtras"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textExtras">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonWide"
+            style="@style/Widget.CricArena.CircleButton.Extra"
+            android:text="@string/wide_short" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonNoBall"
+            style="@style/Widget.CricArena.CircleButton.Extra"
+            android:layout_marginStart="12dp"
+            android:text="@string/no_ball_short" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonBye"
+            style="@style/Widget.CricArena.CircleButton.Extra"
+            android:layout_marginStart="12dp"
+            android:text="@string/bye_short" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutActions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutExtras">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonWicket"
+            style="@style/Widget.CricArena.CircleButton.Danger"
+            android:text="@string/wicket" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonCatch"
+            style="@style/Widget.CricArena.CircleButton"
+            android:layout_marginStart="12dp"
+            android:text="@string/catch_label" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

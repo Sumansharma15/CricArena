@@ -21,7 +21,13 @@
         android:id="@+id/fantasyTeamFragment"
         android:name="com.example.cricarena.ui.fantasyteam.FantasyTeamFragment"
         android:label="Fantasy Team"
-        tools:layout="@layout/fragment_fantasy_team" />
+        tools:layout="@layout/fragment_fantasy_team">
+
+        <argument
+            android:name="match_id"
+            android:defaultValue=""
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/myMatchesFragment"

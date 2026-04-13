@@ -4,28 +4,25 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.cricarena.R
 import com.example.cricarena.data.model.Match
 import com.example.cricarena.data.model.MatchCategory
 import com.example.cricarena.data.model.MatchStatus
 import com.example.cricarena.databinding.FragmentHomeBinding
+import com.example.cricarena.ui.fantasyteam.FantasyTeamFragment
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding ?: error("Binding is only valid between onCreateView and onDestroyView.")
     private val viewModel: HomeViewModel by viewModels()
-    private val matchAdapter = MatchAdapter()
-    private val allMatches = listOf(
-        Match("1", "IND", "AUS", "T20", MatchCategory.MANUAL, MatchStatus.LIVE, "07:30 PM"),
-        Match("2", "ENG", "NZ", "ODI", MatchCategory.AUTO, MatchStatus.UPCOMING, "08:15 PM"),
-        Match("3", "PAK", "SA", "Test", MatchCategory.MANUAL, MatchStatus.COMPLETED, "10:00 AM"),
-        Match("4", "WI", "SL", "T20", MatchCategory.AUTO, MatchStatus.UPCOMING, "09:00 PM"),
-        Match("5", "BAN", "AFG", "ODI", MatchCategory.MANUAL, MatchStatus.LIVE, "06:45 PM")
-    )
+    private val matchAdapter = MatchAdapter(::onJoinMatch)
+    private var loadedMatches: List<Match> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,7 +32,18 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         setupRecyclerView()
         setupFilterChips()
-        renderMatches(allMatches)
+        viewModel.matches.observe(viewLifecycleOwner) { list ->
+            loadedMatches = list
+            val chipId = binding.chipGroupFilters.checkedChipIds.firstOrNull() ?: R.id.chipAllMatches
+            renderMatches(applyChipFilter(chipId))
+        }
+        viewModel.loadError.observe(viewLifecycleOwner) { err ->
+            if (err != null) {
+                Toast.makeText(requireContext(), err, Toast.LENGTH_LONG).show()
+            }
+        }
+        viewModel.loading.observe(viewLifecycleOwner) { setLoading(it) }
+        viewModel.loadMatches()
         return binding.root
     }
 
@@ -49,21 +57,41 @@ class HomeFragment : Fragment() {
     private fun setupFilterChips() {
         binding.chipGroupFilters.setOnCheckedStateChangeListener { _, checkedIds ->
             val selectedId = checkedIds.firstOrNull() ?: R.id.chipAllMatches
-            val filtered = when (selectedId) {
-                R.id.chipLiveMatches -> allMatches.filter { it.status == MatchStatus.LIVE }
-                R.id.chipManualMatches -> allMatches.filter { it.category == MatchCategory.MANUAL }
-                R.id.chipUpcomingMatches -> allMatches.filter { it.status == MatchStatus.UPCOMING }
-                R.id.chipCompletedMatches -> allMatches.filter { it.status == MatchStatus.COMPLETED }
-                else -> allMatches
-            }
-            renderMatches(filtered)
+            renderMatches(applyChipFilter(selectedId))
         }
 
         binding.chipAllMatches.isChecked = true
     }
 
+    private fun applyChipFilter(selectedChipId: Int): List<Match> {
+        return when (selectedChipId) {
+            R.id.chipLiveMatches -> loadedMatches.filter { it.status == MatchStatus.LIVE }
+            R.id.chipManualMatches -> loadedMatches.filter { it.category == MatchCategory.MANUAL }
+            R.id.chipUpcomingMatches -> loadedMatches.filter { it.status == MatchStatus.UPCOMING }
+            R.id.chipCompletedMatches -> loadedMatches.filter { it.status == MatchStatus.COMPLETED }
+            else -> loadedMatches
+        }
+    }
+
+    private fun onJoinMatch(match: Match) {
+        val bundle = Bundle().apply {
+            putString(FantasyTeamFragment.ARG_MATCH_ID, match.id)
+        }
+        findNavController().navigate(R.id.fantasyTeamFragment, bundle)
+    }
+
     private fun renderMatches(matches: List<Match>) {
         matchAdapter.submitList(matches)
+        binding.textEmptyMatches.visibility = if (matches.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun setLoading(isLoading: Boolean) {
+        binding.progressHome.visibility = if (isLoading) View.VISIBLE else View.GONE
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadMatches()
     }
 
     override fun onDestroyView() {

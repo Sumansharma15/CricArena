@@ -7,7 +7,9 @@ data class Match(
     val matchType: String,
     val category: MatchCategory,
     val status: MatchStatus,
-    val startTime: String
+    val startTime: String,
+    /** Short line for list UI, e.g. live score summary */
+    val scoreSummary: String? = null
 )
 
 enum class MatchCategory {

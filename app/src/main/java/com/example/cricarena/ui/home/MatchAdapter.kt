@@ -10,7 +10,9 @@ import com.example.cricarena.data.model.MatchCategory
 import com.example.cricarena.data.model.MatchStatus
 import com.example.cricarena.databinding.ItemMatchBinding
 
-class MatchAdapter : RecyclerView.Adapter<MatchAdapter.MatchViewHolder>() {
+class MatchAdapter(
+    private val onJoinClick: (Match) -> Unit
+) : RecyclerView.Adapter<MatchAdapter.MatchViewHolder>() {
 
     private val items = mutableListOf<Match>()
 
@@ -46,7 +48,11 @@ class MatchAdapter : RecyclerView.Adapter<MatchAdapter.MatchViewHolder>() {
 
             if (item.status == MatchStatus.LIVE) {
                 binding.textLiveBadge.visibility = View.VISIBLE
-                binding.textTimeOrStatus.text = context.getString(R.string.live_now)
+                if (!item.scoreSummary.isNullOrBlank()) {
+                    binding.textTimeOrStatus.text = item.scoreSummary
+                } else {
+                    binding.textTimeOrStatus.text = context.getString(R.string.live_now)
+                }
             } else if (item.status == MatchStatus.COMPLETED) {
                 binding.textLiveBadge.visibility = View.GONE
                 binding.textTimeOrStatus.text = context.getString(R.string.completed_label)
@@ -54,6 +60,8 @@ class MatchAdapter : RecyclerView.Adapter<MatchAdapter.MatchViewHolder>() {
                 binding.textLiveBadge.visibility = View.GONE
                 binding.textTimeOrStatus.text = context.getString(R.string.starts_at, item.startTime)
             }
+
+            binding.buttonJoin.setOnClickListener { onJoinClick(item) }
         }
     }
 }
