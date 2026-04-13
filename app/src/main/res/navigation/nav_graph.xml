@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.cricarena.ui.home.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/createMatchFragment"
+        android:name="com.example.cricarena.ui.creatematch.CreateMatchFragment"
+        android:label="Create Match"
+        tools:layout="@layout/fragment_create_match" />
+
+    <fragment
+        android:id="@+id/fantasyTeamFragment"
+        android:name="com.example.cricarena.ui.fantasyteam.FantasyTeamFragment"
+        android:label="Fantasy Team"
+        tools:layout="@layout/fragment_fantasy_team" />
+
+    <fragment
+        android:id="@+id/myMatchesFragment"
+        android:name="com.example.cricarena.ui.mymatches.MyMatchesFragment"
+        android:label="My Matches"
+        tools:layout="@layout/fragment_my_matches" />
+</navigation>

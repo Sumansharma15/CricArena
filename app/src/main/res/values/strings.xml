@@ -1,3 +1,36 @@
 <resources>
     <string name="app_name">CricArena</string>
+    <string name="login_title">Welcome Back</string>
+    <string name="login_subtitle">Login to continue to CricArena.</string>
+    <string name="register_title">Create Account</string>
+    <string name="register_subtitle">Register to start building your fantasy team.</string>
+    <string name="hint_name">Full Name</string>
+    <string name="hint_email">Email Address</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_confirm_password">Confirm Password</string>
+    <string name="action_login">Login</string>
+    <string name="action_register">Register</string>
+    <string name="action_go_register">Don\'t have an account? Register</string>
+    <string name="action_go_login">Already have an account? Login</string>
+    <string name="error_name_required">Name is required</string>
+    <string name="error_email_required">Email is required</string>
+    <string name="error_email_invalid">Enter a valid email address</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_length">Password must be at least 6 characters</string>
+    <string name="error_password_mismatch">Passwords do not match</string>
+    <string name="error_login_failed">Login failed. Please try again.</string>
+    <string name="error_register_failed">Registration failed. Please try again.</string>
+    <string name="error_user_save_failed">User profile save failed. Please try again.</string>
+    <string name="home_title">Welcome to CricArena</string>
+    <string name="home_subtitle">Track live cricket moments, lineups, and predictions.</string>
+    <string name="home_tab">Home</string>
+    <string name="create_match_title">Create Match</string>
+    <string name="create_match_subtitle">Set up a new match with teams, venue, and schedule.</string>
+    <string name="create_match_tab">Create Match</string>
+    <string name="fantasy_team_title">Fantasy Team</string>
+    <string name="fantasy_team_subtitle">Build your best XI and optimize captain choices.</string>
+    <string name="fantasy_team_tab">Fantasy Team</string>
+    <string name="my_matches_title">My Matches</string>
+    <string name="my_matches_subtitle">Review your created and joined matches in one place.</string>
+    <string name="my_matches_tab">My Matches</string>
 </resources>

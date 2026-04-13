@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_home"
+        android:title="@string/home_tab" />
+    <item
+        android:id="@+id/createMatchFragment"
+        android:icon="@drawable/ic_create"
+        android:title="@string/create_match_tab" />
+    <item
+        android:id="@+id/fantasyTeamFragment"
+        android:icon="@drawable/ic_team"
+        android:title="@string/fantasy_team_tab" />
+    <item
+        android:id="@+id/myMatchesFragment"
+        android:icon="@drawable/ic_list"
+        android:title="@string/my_matches_tab" />
+</menu>

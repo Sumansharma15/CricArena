@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base application theme. -->
+    <style name="Theme.CricArena" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+        <item name="android:statusBarColor">@color/primaryDark</item>
+        <item name="android:windowBackground">@color/background</item>
+    </style>
 
-    <style name="Theme.CricArena" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Widget.CricArena.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/primary</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.CricArena.FullPill</item>
+    </style>
+
+    <style name="TextAppearance.CricArena.BottomNav.Active" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.CricArena.BottomNav.Inactive" parent="TextAppearance.Material3.LabelMedium" />
+
+    <style name="ShapeAppearance.CricArena.FullPill" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>
