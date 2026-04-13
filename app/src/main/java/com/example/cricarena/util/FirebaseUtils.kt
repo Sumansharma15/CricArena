@@ -11,6 +11,7 @@ object FirebaseUtils {
 
     fun usersCollection(): CollectionReference = firestore.collection("Users")
     fun matchesCollection(): CollectionReference = firestore.collection("Matches")
+    fun teamsCollection(): CollectionReference = firestore.collection("Teams")
 
     fun userDocument(userId: String): DocumentReference = usersCollection().document(userId)
 }
