@@ -15,6 +15,10 @@
         android:theme="@style/Theme.CricArena"
         tools:targetApi="31">
         <activity
+            android:name=".ui.matchdetails.MatchDetailsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.CricArena" />
+        <activity
             android:name=".MainActivity"
             android:exported="false"
             android:label="@string/app_name"
