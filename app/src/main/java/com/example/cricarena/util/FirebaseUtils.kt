@@ -10,6 +10,7 @@ object FirebaseUtils {
     val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     fun usersCollection(): CollectionReference = firestore.collection("Users")
+    fun matchesCollection(): CollectionReference = firestore.collection("Matches")
 
     fun userDocument(userId: String): DocumentReference = usersCollection().document(userId)
 }
