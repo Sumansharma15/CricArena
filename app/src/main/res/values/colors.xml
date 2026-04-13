@@ -9,6 +9,7 @@
     <color name="surface">#FFFFFF</color>
     <color name="textPrimary">#212121</color>
     <color name="textSecondary">#757575</color>
+    <color name="liveRed">#E53935</color>
     
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
