@@ -7,6 +7,7 @@ import com.example.cricarena.R
 import com.example.cricarena.base.BaseActivity
 import com.example.cricarena.data.model.LeaderboardEntry
 import com.example.cricarena.data.model.PlayerPointsEntry
+import com.example.cricarena.data.scoring.FantasyScoringManager
 import com.example.cricarena.databinding.ActivityMatchDetailsBinding
 import com.example.cricarena.util.FirebaseUtils
 
@@ -14,6 +15,7 @@ class MatchDetailsActivity : BaseActivity<ActivityMatchDetailsBinding>() {
 
     private val leaderboardAdapter = LeaderboardAdapter()
     private val playerPointsAdapter = PlayerPointsAdapter()
+    private val scoringManager = FantasyScoringManager()
 
     override fun setupViewBinding(): ActivityMatchDetailsBinding =
         ActivityMatchDetailsBinding.inflate(layoutInflater)
@@ -31,11 +33,20 @@ class MatchDetailsActivity : BaseActivity<ActivityMatchDetailsBinding>() {
         binding.toolbarDetails.setNavigationOnClickListener { finish() }
         binding.recyclerLeaderboard.adapter = leaderboardAdapter
         binding.recyclerPlayerPoints.adapter = playerPointsAdapter
-        fetchDetails(matchId)
+        recomputeAndFetch(matchId)
+    }
+
+    private fun recomputeAndFetch(matchId: String) {
+        setLoading(true)
+        scoringManager.calculateAndStoreResults(matchId) { _, error ->
+            if (error != null) {
+                Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
+            }
+            fetchDetails(matchId)
+        }
     }
 
     private fun fetchDetails(matchId: String) {
-        setLoading(true)
         fetchLeaderboard(matchId)
         fetchPlayerPoints(matchId)
     }
