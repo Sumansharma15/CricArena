@@ -4,12 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
+    android:clipToPadding="false"
     android:fillViewport="true"
     android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingBottom="10dp"
         android:orientation="vertical">
 
         <com.google.android.material.card.MaterialCardView
@@ -17,7 +20,7 @@
             android:layout_height="wrap_content"
             app:cardBackgroundColor="@android:color/transparent"
             app:cardCornerRadius="20dp"
-            app:cardElevation="8dp">
+            app:cardElevation="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -48,6 +51,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
                     android:hint="@string/match_title">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -63,6 +70,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
                     android:hint="@string/team_a_name">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -78,6 +89,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
                     android:hint="@string/team_b_name">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -93,6 +108,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
                     android:hint="@string/match_type">
 
                     <AutoCompleteTextView
@@ -109,6 +128,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
                     android:hint="@string/start_date_time">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -128,7 +151,9 @@
             android:layout_marginTop="14dp"
             app:cardBackgroundColor="@color/surface"
             app:cardCornerRadius="20dp"
-            app:cardElevation="6dp">
+            app:cardElevation="4dp"
+            app:strokeColor="#14000000"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -150,6 +175,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    app:icon="@android:drawable/ic_input_add"
+                    app:iconPadding="8dp"
                     android:text="@string/add_player" />
 
                 <LinearLayout
@@ -212,7 +239,9 @@
             android:layout_marginTop="14dp"
             app:cardBackgroundColor="@color/surface"
             app:cardCornerRadius="20dp"
-            app:cardElevation="6dp">
+            app:cardElevation="4dp"
+            app:strokeColor="#14000000"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -303,22 +332,23 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="10dp"
-            android:gravity="end"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonSaveDraft"
                 style="@style/Widget.CricArena.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="@string/save_draft" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonPublishMatch"
                 style="@style/Widget.CricArena.Button"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                android:layout_weight="1"
                 android:text="@string/publish_match" />
         </LinearLayout>
 
