@@ -1,6 +1,7 @@
 package com.example.cricarena.ui.home
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -43,6 +44,7 @@ class HomeFragment : Fragment() {
             }
         }
         viewModel.loading.observe(viewLifecycleOwner) { setLoading(it) }
+        binding.textEmptyMatches.text = getString(R.string.no_matches_available)
         viewModel.loadMatches()
         return binding.root
     }
@@ -74,6 +76,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun onJoinMatch(match: Match) {
+        Log.d(TAG, "Join clicked for matchId: ${match.id}")
         val bundle = Bundle().apply {
             putString(FantasyTeamFragment.ARG_MATCH_ID, match.id)
         }
@@ -89,14 +92,13 @@ class HomeFragment : Fragment() {
         binding.progressHome.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
-    override fun onResume() {
-        super.onResume()
-        viewModel.loadMatches()
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         binding.recyclerMatches.adapter = null
         _binding = null
+    }
+
+    companion object {
+        private const val TAG = "FIREBASE_DEBUG"
     }
 }

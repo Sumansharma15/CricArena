@@ -502,10 +502,15 @@ class CreateMatchFragment : Fragment() {
     }
 
     private fun openPlayerScoring(player: LivePlayer) {
-        initializeLiveScoring()
+        if (!liveScoringViewModel.isInitialized()) {
+            initializeLiveScoring()
+        }
+        val current = liveScoringViewModel.getPlayerState(player.id)
         val intent = Intent(requireContext(), PlayerScoringActivity::class.java).apply {
             putExtra(PlayerScoringActivity.EXTRA_PLAYER_ID, player.id)
             putExtra(PlayerScoringActivity.EXTRA_PLAYER_NAME, player.name)
+            putExtra(PlayerScoringActivity.EXTRA_CURRENT_RUNS, current?.runs ?: 0)
+            putExtra(PlayerScoringActivity.EXTRA_CURRENT_BALLS, current?.balls ?: 0)
         }
         scoringLauncher.launch(intent)
     }

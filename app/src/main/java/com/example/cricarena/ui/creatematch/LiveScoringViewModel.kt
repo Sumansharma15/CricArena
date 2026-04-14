@@ -41,19 +41,33 @@ class LiveScoringViewModel : ViewModel() {
     private var firestoreTeamB: String = ""
     private var markedLiveOnFirestore = false
 
+    /**
+     * Builds live players from the squad. Reuses existing [LivePlayer] stats when the stable id matches
+     * so runs/balls accumulate across balls (opening the scoring screen must not reset totals).
+     */
     fun initialize(matchTitle: String, teamA: String, teamB: String, matchPlayers: List<MatchPlayer>) {
+        val oldById = _players.value.orEmpty().associateBy { it.id }
+        val oldTeams = _teams.value.orEmpty()
+
         val mappedPlayers = matchPlayers.mapIndexed { index, player ->
-            LivePlayer(
-                id = MatchPayloadBuilder.stablePlayerId(player.teamName, index + 1, player.name),
-                name = player.name,
-                role = player.role,
-                teamName = player.teamName
-            )
+            val id = MatchPayloadBuilder.stablePlayerId(player.teamName, index + 1, player.name)
+            val existing = oldById[id]
+            if (existing != null) {
+                existing.copy(name = player.name, role = player.role, teamName = player.teamName)
+            } else {
+                LivePlayer(
+                    id = id,
+                    name = player.name,
+                    role = player.role,
+                    teamName = player.teamName
+                )
+            }
         }
         _players.value = mappedPlayers
+
         _teams.value = mapOf(
-            teamA to LiveTeam(teamA),
-            teamB to LiveTeam(teamB)
+            teamA to (oldTeams[teamA] ?: LiveTeam(teamA)),
+            teamB to (oldTeams[teamB] ?: LiveTeam(teamB))
         )
         _matchTitle.value = matchTitle
         _selectedTeam.value = teamA
@@ -61,6 +75,9 @@ class LiveScoringViewModel : ViewModel() {
         firestoreTeamB = teamB
         refreshUi()
     }
+
+    fun getPlayerState(playerId: String): LivePlayer? =
+        _players.value.orEmpty().firstOrNull { it.id == playerId }
 
     /**
      * Call after the match is saved to Firestore so each ball updates totals incrementally on the server.

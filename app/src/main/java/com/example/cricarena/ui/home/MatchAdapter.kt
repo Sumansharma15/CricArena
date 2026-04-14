@@ -44,7 +44,13 @@ class MatchAdapter(
             } else {
                 context.getString(R.string.match_category_auto)
             }
-            binding.textMatchType.text = context.getString(R.string.match_type_format, item.matchType, categoryText)
+            val title = item.title.ifBlank { context.getString(R.string.default_match_title, item.teamA, item.teamB) }
+            binding.textMatchType.text = context.getString(
+                R.string.match_card_title_format,
+                title,
+                item.matchType,
+                categoryText
+            )
 
             if (item.status == MatchStatus.LIVE) {
                 binding.textLiveBadge.visibility = View.VISIBLE

@@ -31,6 +31,8 @@
     <string name="match_category_manual">Manual Match</string>
     <string name="match_category_auto">Auto Match</string>
     <string name="match_type_format">%1$s - %2$s</string>
+    <string name="match_card_title_format">%1$s • %2$s - %3$s</string>
+    <string name="default_match_title">%1$s vs %2$s</string>
     <string name="starts_at">Starts at %1$s</string>
     <string name="live_now">Live now</string>
     <string name="completed_label">Completed</string>
@@ -60,6 +62,8 @@
     <string name="publish_match">Publish Match</string>
     <string name="save_team_to_cloud">Save team</string>
     <string name="squads_saved">Squads saved. Scoring syncs to the cloud; open Fantasy from Home.</string>
+    <string name="player_scoring_current_totals">Current: %1$d runs · %2$d balls</string>
+    <string name="fantasy_loaded_saved_team">Loaded your saved fantasy team</string>
     <string name="cancel">Cancel</string>
     <string name="add">Add</string>
     <string name="update">Update</string>
@@ -130,6 +134,7 @@
     <string name="tab_created_matches">Created Matches</string>
     <string name="tab_completed_matches">Completed Matches</string>
     <string name="no_matches_found">No matches found.</string>
+    <string name="no_matches_available">No matches available.</string>
     <string name="status_format">Status: %1$s</string>
     <string name="points_format">Points: %1$.1f</string>
     <string name="rank_format">Rank: %1$d</string>

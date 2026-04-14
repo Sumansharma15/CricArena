@@ -14,7 +14,10 @@ class PlayerScoringActivity : BaseActivity<ActivityPlayerScoringBinding>() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         val playerName = intent.getStringExtra(EXTRA_PLAYER_NAME).orEmpty()
         val playerId = intent.getStringExtra(EXTRA_PLAYER_ID).orEmpty()
+        val runs = intent.getIntExtra(EXTRA_CURRENT_RUNS, 0)
+        val balls = intent.getIntExtra(EXTRA_CURRENT_BALLS, 0)
         binding.toolbarScoring.title = if (playerName.isBlank()) getString(R.string.live_scoring) else playerName
+        binding.toolbarScoring.subtitle = getString(R.string.player_scoring_current_totals, runs, balls)
         binding.toolbarScoring.setNavigationOnClickListener { finish() }
 
         binding.buttonRun0.setOnClickListener { sendResult(playerId, ACTION_RUN, 0) }
@@ -43,6 +46,8 @@ class PlayerScoringActivity : BaseActivity<ActivityPlayerScoringBinding>() {
     companion object {
         const val EXTRA_PLAYER_ID = "extra_player_id"
         const val EXTRA_PLAYER_NAME = "extra_player_name"
+        const val EXTRA_CURRENT_RUNS = "extra_current_runs"
+        const val EXTRA_CURRENT_BALLS = "extra_current_balls"
 
         const val RESULT_PLAYER_ID = "result_player_id"
         const val RESULT_ACTION = "result_action"

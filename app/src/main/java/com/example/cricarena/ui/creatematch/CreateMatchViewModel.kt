@@ -1,5 +1,6 @@
 package com.example.cricarena.ui.creatematch
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.cricarena.data.model.MatchPlayer
 import com.example.cricarena.data.payload.MatchPayloadBuilder
@@ -27,6 +28,8 @@ class CreateMatchViewModel : ViewModel() {
             "title" to title,
             "teamA" to teamA,
             "teamB" to teamB,
+            "teamAName" to teamA,
+            "teamBName" to teamB,
             "matchType" to matchType,
             "startTimeMillis" to startTimeMillis,
             "players" to built.playersPayload,
@@ -41,10 +44,23 @@ class CreateMatchViewModel : ViewModel() {
         )
 
         val matchRef = FirebaseUtils.matchesCollection().document()
+        Log.d(TAG, "Saving match to path: Matches/${matchRef.id}")
         matchRef
             .set(payload)
             .addOnSuccessListener {
                 val batch = FirebaseUtils.firestore.batch()
+                built.playersPayload.forEach { player ->
+                    val playerId = player["id"]?.toString().orEmpty()
+                    if (playerId.isBlank()) return@forEach
+                    val playerDoc = mapOf(
+                        "id" to playerId,
+                        "name" to player["name"].toString(),
+                        "team" to player["teamName"].toString(),
+                        "role" to player["role"].toString()
+                    )
+                    val playerRef = matchRef.collection("players").document(playerId)
+                    batch.set(playerRef, playerDoc)
+                }
                 built.playerStatsTemplate.forEach { stat ->
                     val playerId = stat["playerId"]?.toString().orEmpty()
                     if (playerId.isBlank()) return@forEach
@@ -52,9 +68,22 @@ class CreateMatchViewModel : ViewModel() {
                     batch.set(statRef, stat)
                 }
                 batch.commit()
-                    .addOnSuccessListener { onResult(true, matchRef.id) }
-                    .addOnFailureListener { e -> onResult(false, e.localizedMessage ?: "Failed to create player stats.") }
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Match saved successfully: ${matchRef.id}, players=${players.size}")
+                        onResult(true, matchRef.id)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to save subcollections for matchId: ${matchRef.id}", e)
+                        onResult(false, e.localizedMessage ?: "Failed to create player records.")
+                    }
             }
-            .addOnFailureListener { e -> onResult(false, e.localizedMessage) }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to save match document", e)
+                onResult(false, e.localizedMessage)
+            }
+    }
+
+    companion object {
+        private const val TAG = "FIREBASE_DEBUG"
     }
 }

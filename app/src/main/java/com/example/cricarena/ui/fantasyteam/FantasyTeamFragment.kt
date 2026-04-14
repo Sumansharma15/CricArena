@@ -1,5 +1,6 @@
 package com.example.cricarena.ui.fantasyteam
 
+import android.util.Log
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +24,7 @@ class FantasyTeamFragment : Fragment() {
     private var viceCaptainId: String? = null
     private var players = listOf<FantasyPlayer>()
     private var selectedMatchId: String = ""
+    private var hasAppliedSavedTeam = false
 
     private val adapter: FantasyPlayerAdapter by lazy {
         FantasyPlayerAdapter(
@@ -40,7 +42,11 @@ class FantasyTeamFragment : Fragment() {
         _binding = FragmentFantasyTeamBinding.inflate(inflater, container, false)
         setupRecycler()
         setupSaveButton()
-        selectedMatchId = arguments?.getString(ARG_MATCH_ID).orEmpty()
+        selectedMatchId = arguments?.getString(ARG_MATCH_ID)
+            ?: arguments?.getString("matchId")
+            .orEmpty()
+        Log.d(TAG, "Fantasy screen opened with matchId: $selectedMatchId")
+        bindObservers()
         if (selectedMatchId.isBlank()) {
             Toast.makeText(requireContext(), R.string.error_match_id_required, Toast.LENGTH_LONG).show()
         } else {
@@ -64,18 +70,49 @@ class FantasyTeamFragment : Fragment() {
     }
 
     private fun fetchPlayers(matchId: String) {
-        setLoading(true)
-        viewModel.fetchPlayersFromMatch(matchId) { fetchedPlayers, error ->
-            setLoading(false)
-            if (error != null) {
+        Log.d(TAG, "Fetching players for matchId: $matchId from path: Matches/$matchId/players")
+        viewModel.observePlayers(matchId)
+        viewModel.fetchSavedTeam(matchId) { _, fetchErr ->
+            if (fetchErr != null) {
+                Toast.makeText(requireContext(), fetchErr, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun bindObservers() {
+        viewModel.players.observe(viewLifecycleOwner) { fetchedPlayers ->
+            players = fetchedPlayers
+            applySavedSelectionIfAvailable()
+            renderSelectionState()
+        }
+        viewModel.savedTeam.observe(viewLifecycleOwner) {
+            applySavedSelectionIfAvailable()
+            renderSelectionState()
+        }
+        viewModel.loading.observe(viewLifecycleOwner) { isLoading ->
+            setLoading(isLoading)
+        }
+        viewModel.loadError.observe(viewLifecycleOwner) { error ->
+            if (!error.isNullOrBlank()) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
                 Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
-                return@fetchPlayersFromMatch
             }
-            players = fetchedPlayers
-            adapter.submitPlayers(players, selectedPlayerIds, captainId, viceCaptainId)
-            binding.textEmptyFantasyPlayers.visibility = if (players.isEmpty()) View.VISIBLE else View.GONE
         }
+    }
+
+    private fun applySavedSelectionIfAvailable() {
+        val saved = viewModel.savedTeam.value ?: return
+        if (hasAppliedSavedTeam) return
+        val validIds = players.map { it.id }.toSet()
+        selectedPlayerIds.clear()
+        selectedPlayerIds.addAll(saved.selectedPlayerIds.intersect(validIds))
+        captainId = saved.captainId.takeIf { it.isNotBlank() && validIds.contains(it) }
+        viceCaptainId = saved.viceCaptainId.takeIf { it.isNotBlank() && validIds.contains(it) }
+        if (captainId != null && captainId == viceCaptainId) viceCaptainId = null
+        if (selectedPlayerIds.isNotEmpty()) {
+            Toast.makeText(requireContext(), R.string.fantasy_loaded_saved_team, Toast.LENGTH_SHORT).show()
+        }
+        hasAppliedSavedTeam = true
     }
 
     private fun togglePlayerSelection(player: FantasyPlayer) {
@@ -174,5 +211,6 @@ class FantasyTeamFragment : Fragment() {
     companion object {
         const val ARG_MATCH_ID = "match_id"
         private const val MAX_PLAYERS = 11
+        private const val TAG = "FIREBASE_DEBUG"
     }
 }

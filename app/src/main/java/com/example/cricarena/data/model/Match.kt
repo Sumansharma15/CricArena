@@ -2,6 +2,7 @@ package com.example.cricarena.data.model
 
 data class Match(
     val id: String,
+    val title: String = "",
     val teamA: String,
     val teamB: String,
     val matchType: String,
