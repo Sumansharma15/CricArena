@@ -9,10 +9,11 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.cricarena.R
 import com.example.cricarena.data.model.FantasyPlayer
+import com.example.cricarena.data.model.Match
 import com.example.cricarena.databinding.FragmentFantasyTeamBinding
-import com.google.android.material.snackbar.Snackbar
 
 class FantasyTeamFragment : Fragment() {
 
@@ -24,7 +25,12 @@ class FantasyTeamFragment : Fragment() {
     private var viceCaptainId: String? = null
     private var players = listOf<FantasyPlayer>()
     private var selectedMatchId: String = ""
+    private var selectedMatchTitle: String = ""
     private var hasAppliedSavedTeam = false
+
+    private val matchPickerAdapter: FantasyMatchPickerAdapter by lazy {
+        FantasyMatchPickerAdapter(::onFantasyMatchPicked)
+    }
 
     private val adapter: FantasyPlayerAdapter by lazy {
         FantasyPlayerAdapter(
@@ -39,21 +45,93 @@ class FantasyTeamFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        FantasyMatchSession.init(requireContext())
         _binding = FragmentFantasyTeamBinding.inflate(inflater, container, false)
         setupRecycler()
+        setupMatchPickerRecycler()
         setupSaveButton()
-        selectedMatchId = arguments?.getString(ARG_MATCH_ID)
-            ?: arguments?.getString("matchId")
-            .orEmpty()
-        Log.d(TAG, "Fantasy screen opened with matchId: $selectedMatchId")
-        bindObservers()
-        if (selectedMatchId.isBlank()) {
-            Toast.makeText(requireContext(), R.string.error_match_id_required, Toast.LENGTH_LONG).show()
-        } else {
-            fetchPlayers(selectedMatchId)
+        setupChangeMatch()
+
+        val fromArgs = arguments?.getString(ARG_MATCH_ID).orEmpty()
+            .ifBlank { arguments?.getString("matchId").orEmpty() }
+        if (fromArgs.isNotBlank()) {
+            FantasyMatchSession.remember(fromArgs)
         }
-        renderSelectionState()
+        selectedMatchId = fromArgs.ifBlank { FantasyMatchSession.lastMatchId }
+        Log.d(NAV_TAG, "matchId from args='$fromArgs' resolved='$selectedMatchId'")
+
+        if (selectedMatchId.isNotBlank()) {
+            selectedMatchTitle = ""
+            enterTeamBuilderForMatch(selectedMatchId)
+        } else {
+            showMatchPickerOnly()
+        }
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewModel.observeEligibleMatches()
+        bindObservers()
+    }
+
+    private fun matchDisplayName(match: Match?): String {
+        if (match == null) return ""
+        return match.title.ifBlank {
+            getString(R.string.default_match_title, match.teamA, match.teamB)
+        }
+    }
+
+    private fun enterTeamBuilderForMatch(matchId: String) {
+        selectedMatchId = matchId
+        FantasyMatchSession.remember(matchId)
+        resetLocalSelection()
+        hasAppliedSavedTeam = false
+
+        showTeamBuilderUi()
+        viewModel.loadMatchForFantasy(matchId)
+        viewModel.fetchSavedTeam(matchId) { _, fetchErr ->
+            if (fetchErr != null) {
+                Toast.makeText(requireContext(), fetchErr, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun onFantasyMatchPicked(match: Match) {
+        selectedMatchTitle = matchDisplayName(match)
+        enterTeamBuilderForMatch(match.id)
+    }
+
+    private fun showMatchPickerOnly() {
+        binding.containerMatchPicker.visibility = View.VISIBLE
+        binding.containerTeamBuilder.visibility = View.GONE
+        binding.recyclerFantasyMatches.visibility = View.VISIBLE
+        binding.textSelectedCount.visibility = View.GONE
+        binding.buttonChangeMatch.visibility = View.GONE
+    }
+
+    private fun showTeamBuilderUi() {
+        binding.containerMatchPicker.visibility = View.GONE
+        binding.containerTeamBuilder.visibility = View.VISIBLE
+        binding.textSelectedCount.visibility = View.VISIBLE
+        binding.buttonChangeMatch.visibility = View.VISIBLE
+    }
+
+    private fun setupChangeMatch() {
+        binding.buttonChangeMatch.setOnClickListener {
+            viewModel.resetPlayerStreams()
+            selectedMatchId = ""
+            selectedMatchTitle = ""
+            resetLocalSelection()
+            hasAppliedSavedTeam = false
+            showMatchPickerOnly()
+        }
+    }
+
+    private fun resetLocalSelection() {
+        selectedPlayerIds.clear()
+        captainId = null
+        viceCaptainId = null
     }
 
     private fun setupRecycler() {
@@ -63,25 +141,41 @@ class FantasyTeamFragment : Fragment() {
         }
     }
 
+    private fun setupMatchPickerRecycler() {
+        binding.recyclerFantasyMatches.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = matchPickerAdapter
+        }
+    }
+
     private fun setupSaveButton() {
         binding.buttonSaveTeam.setOnClickListener {
             saveTeam()
         }
     }
 
-    private fun fetchPlayers(matchId: String) {
-        Log.d(TAG, "Fetching players for matchId: $matchId from path: Matches/$matchId/players")
-        viewModel.observePlayers(matchId)
-        viewModel.fetchSavedTeam(matchId) { _, fetchErr ->
-            if (fetchErr != null) {
-                Toast.makeText(requireContext(), fetchErr, Toast.LENGTH_LONG).show()
+    private fun renderFantasyMatchPicker() {
+        val matches = viewModel.eligibleMatches.value.orEmpty()
+        val listLoading = viewModel.eligibleMatchesLoading.value == true
+        Log.d(NAV_TAG, "Fantasy picker showing ${matches.size} eligible matches (listLoading=$listLoading)")
+        binding.recyclerFantasyMatches.visibility = View.VISIBLE
+        matchPickerAdapter.submitList(matches)
+        binding.progressFantasyMatchList.visibility = if (listLoading) View.VISIBLE else View.GONE
+        binding.textEmptyFantasyMatches.visibility =
+            if (matches.isEmpty() && !listLoading) View.VISIBLE else View.GONE
+        if (selectedMatchId.isNotBlank() && selectedMatchTitle.isBlank()) {
+            matches.find { it.id == selectedMatchId }?.let {
+                selectedMatchTitle = matchDisplayName(it)
             }
         }
     }
 
     private fun bindObservers() {
+        viewModel.eligibleMatches.observe(viewLifecycleOwner) { renderFantasyMatchPicker() }
+        viewModel.eligibleMatchesLoading.observe(viewLifecycleOwner) { renderFantasyMatchPicker() }
         viewModel.players.observe(viewLifecycleOwner) { fetchedPlayers ->
             players = fetchedPlayers
+            binding.textPoolHint.text = getString(R.string.fantasy_pool_hint, fetchedPlayers.size)
             applySavedSelectionIfAvailable()
             renderSelectionState()
         }
@@ -95,7 +189,6 @@ class FantasyTeamFragment : Fragment() {
         viewModel.loadError.observe(viewLifecycleOwner) { error ->
             if (!error.isNullOrBlank()) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
-                Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
             }
         }
     }
@@ -168,21 +261,26 @@ class FantasyTeamFragment : Fragment() {
             return
         }
 
+        val displayName = selectedMatchTitle.ifBlank {
+            viewModel.eligibleMatches.value?.find { it.id == selectedMatchId }?.let { matchDisplayName(it) }
+                .orEmpty()
+        }.ifBlank { "Match $selectedMatchId" }
+
         val selectedPlayers = players.filter { selectedPlayerIds.contains(it.id) }
         setLoading(true)
         viewModel.saveTeam(
             matchId = selectedMatchId,
+            matchDisplayName = displayName,
             selectedPlayers = selectedPlayers,
             captainId = captainId.orEmpty(),
             viceCaptainId = viceCaptainId.orEmpty()
         ) { success, error ->
             setLoading(false)
             if (success) {
+                FantasyMatchSession.remember(selectedMatchId)
                 Toast.makeText(requireContext(), R.string.team_saved_success, Toast.LENGTH_SHORT).show()
-                Snackbar.make(binding.root, R.string.team_saved_success, Snackbar.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(requireContext(), error ?: getString(R.string.error_save_team), Toast.LENGTH_LONG).show()
-                Snackbar.make(binding.root, error ?: getString(R.string.error_save_team), Snackbar.LENGTH_LONG).show()
             }
         }
     }
@@ -204,7 +302,6 @@ class FantasyTeamFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding.recyclerPlayers.adapter = null
         _binding = null
     }
 
@@ -212,5 +309,6 @@ class FantasyTeamFragment : Fragment() {
         const val ARG_MATCH_ID = "match_id"
         private const val MAX_PLAYERS = 11
         private const val TAG = "FIREBASE_DEBUG"
+        private const val NAV_TAG = "NAV_DEBUG"
     }
 }

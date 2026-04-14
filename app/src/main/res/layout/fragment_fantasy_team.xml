@@ -34,61 +34,155 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textSelectedCount"
+                android:id="@+id/textFantasySubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
+                android:text="@string/fantasy_team_subtitle"
+                android:textColor="@color/headerTextOnGradient"
+                android:textSize="13sp"
+                android:alpha="0.95" />
+
+            <TextView
+                android:id="@+id/textSelectedCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:textColor="@color/headerTextOnGradient"
                 android:textStyle="bold"
-                tools:text="Selected: 0 / 11" />
+                android:visibility="gone"
+                tools:text="Selected: 0 / 11"
+                tools:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonChangeMatch"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/fantasy_change_match"
+                android:textColor="@color/headerTextOnGradient"
+                android:visibility="gone"
+                tools:visibility="visible" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerPlayers"
+    <LinearLayout
+        android:id="@+id/containerMatchPicker"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="12dp"
-        android:paddingBottom="12dp"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:layout_constraintBottom_toTopOf="@id/buttonSaveTeam"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardHeader">
+
+        <TextView
+            android:id="@+id/textPickMatchTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/fantasy_pick_match_title"
+            android:textColor="@color/textPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerFantasyMatches"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1"
+            tools:listitem="@layout/item_fantasy_match_pick" />
+
+        <ProgressBar
+            android:id="@+id/progressFantasyMatchList"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textEmptyFantasyMatches"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/no_matches_available"
+            android:textColor="@color/textSecondary"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/containerTeamBuilder"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/cardHeader"
-        app:spanCount="2"
-        tools:listitem="@layout/item_fantasy_player" />
+        tools:visibility="visible">
 
-    <TextView
-        android:id="@+id/textEmptyFantasyPlayers"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/no_players_found"
-        android:textColor="@color/textSecondary"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/recyclerPlayers"
-        app:layout_constraintEnd_toEndOf="@id/recyclerPlayers"
-        app:layout_constraintStart_toStartOf="@id/recyclerPlayers"
-        app:layout_constraintTop_toTopOf="@id/recyclerPlayers" />
+        <TextView
+            android:id="@+id/textPoolHint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/textSecondary"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Squad: 22 players" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/buttonSaveTeam"
-        style="@style/Widget.CricArena.Button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/save_fantasy_team"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerPlayers"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:paddingBottom="12dp"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:layout_constraintBottom_toTopOf="@id/buttonSaveTeam"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textPoolHint"
+            app:spanCount="2"
+            tools:listitem="@layout/item_fantasy_player" />
 
-    <ProgressBar
-        android:id="@+id/progressFantasy"
-        style="?android:attr/progressBarStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/recyclerPlayers"
-        app:layout_constraintEnd_toEndOf="@id/recyclerPlayers"
-        app:layout_constraintStart_toStartOf="@id/recyclerPlayers"
-        app:layout_constraintTop_toTopOf="@id/recyclerPlayers" />
+        <TextView
+            android:id="@+id/textEmptyFantasyPlayers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/no_players_found"
+            android:textColor="@color/textSecondary"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/recyclerPlayers"
+            app:layout_constraintEnd_toEndOf="@id/recyclerPlayers"
+            app:layout_constraintStart_toStartOf="@id/recyclerPlayers"
+            app:layout_constraintTop_toTopOf="@id/recyclerPlayers" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSaveTeam"
+            style="@style/Widget.CricArena.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/save_fantasy_team"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <ProgressBar
+            android:id="@+id/progressFantasy"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/recyclerPlayers"
+            app:layout_constraintEnd_toEndOf="@id/recyclerPlayers"
+            app:layout_constraintStart_toStartOf="@id/recyclerPlayers"
+            app:layout_constraintTop_toTopOf="@id/recyclerPlayers" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -15,6 +15,7 @@ import com.example.cricarena.data.model.Match
 import com.example.cricarena.data.model.MatchCategory
 import com.example.cricarena.data.model.MatchStatus
 import com.example.cricarena.databinding.FragmentHomeBinding
+import com.example.cricarena.ui.fantasyteam.FantasyMatchSession
 import com.example.cricarena.ui.fantasyteam.FantasyTeamFragment
 
 class HomeFragment : Fragment() {
@@ -33,20 +34,41 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         setupRecyclerView()
         setupFilterChips()
-        viewModel.matches.observe(viewLifecycleOwner) { list ->
-            loadedMatches = list
-            val chipId = binding.chipGroupFilters.checkedChipIds.firstOrNull() ?: R.id.chipAllMatches
-            renderMatches(applyChipFilter(chipId))
-        }
+        binding.textEmptyMatches.text = getString(R.string.no_matches_available)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewModel.matches.observe(viewLifecycleOwner) { refreshHomeList(it) }
         viewModel.loadError.observe(viewLifecycleOwner) { err ->
             if (err != null) {
                 Toast.makeText(requireContext(), err, Toast.LENGTH_LONG).show()
             }
         }
-        viewModel.loading.observe(viewLifecycleOwner) { setLoading(it) }
-        binding.textEmptyMatches.text = getString(R.string.no_matches_available)
+        viewModel.loading.observe(viewLifecycleOwner) {
+            setLoading(it)
+            if (!it) {
+                // Re-evaluate empty state once initial loading is complete.
+                refreshHomeList(loadedMatches)
+            }
+        }
         viewModel.loadMatches()
-        return binding.root
+    }
+
+    private fun refreshHomeList(list: List<Match>) {
+        loadedMatches = list
+        var chipId = binding.chipGroupFilters.checkedChipIds.firstOrNull() ?: R.id.chipAllMatches
+        var filtered = applyChipFilter(chipId)
+        // Restored chip (e.g. Live) can filter all rows while Firestore still returns many — looks like "not loaded".
+        if (list.isNotEmpty() && filtered.isEmpty() && chipId != R.id.chipAllMatches) {
+            binding.chipAllMatches.isChecked = true
+            chipId = R.id.chipAllMatches
+            filtered = list
+        }
+        val loading = viewModel.loading.value == true
+        Log.d(TAG, "Home rendering ${filtered.size} matches (loaded=${list.size}, chip=$chipId, loading=$loading)")
+        renderMatches(filtered, loading)
     }
 
     private fun setupRecyclerView() {
@@ -59,7 +81,7 @@ class HomeFragment : Fragment() {
     private fun setupFilterChips() {
         binding.chipGroupFilters.setOnCheckedStateChangeListener { _, checkedIds ->
             val selectedId = checkedIds.firstOrNull() ?: R.id.chipAllMatches
-            renderMatches(applyChipFilter(selectedId))
+            renderMatches(applyChipFilter(selectedId), viewModel.loading.value == true)
         }
 
         binding.chipAllMatches.isChecked = true
@@ -76,16 +98,20 @@ class HomeFragment : Fragment() {
     }
 
     private fun onJoinMatch(match: Match) {
-        Log.d(TAG, "Join clicked for matchId: ${match.id}")
+        Log.d(NAV_TAG, "Sending matchId: ${match.id}")
+        FantasyMatchSession.init(requireContext())
+        FantasyMatchSession.remember(match.id)
         val bundle = Bundle().apply {
             putString(FantasyTeamFragment.ARG_MATCH_ID, match.id)
         }
-        findNavController().navigate(R.id.fantasyTeamFragment, bundle)
+        findNavController().navigate(R.id.action_home_to_fantasy, bundle)
     }
 
-    private fun renderMatches(matches: List<Match>) {
+    private fun renderMatches(matches: List<Match>, stillLoading: Boolean = viewModel.loading.value == true) {
+        binding.recyclerMatches.visibility = View.VISIBLE
         matchAdapter.submitList(matches)
-        binding.textEmptyMatches.visibility = if (matches.isEmpty()) View.VISIBLE else View.GONE
+        val showEmpty = matches.isEmpty() && !stillLoading
+        binding.textEmptyMatches.visibility = if (showEmpty) View.VISIBLE else View.GONE
     }
 
     private fun setLoading(isLoading: Boolean) {
@@ -94,11 +120,11 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding.recyclerMatches.adapter = null
         _binding = null
     }
 
     companion object {
-        private const val TAG = "FIREBASE_DEBUG"
+        private const val NAV_TAG = "NAV_DEBUG"
+        private const val TAG = "HOME_UI"
     }
 }

@@ -65,6 +65,12 @@ class FantasyPlayerAdapter(
             binding.textPlayerRole.setCompoundDrawablesRelativeWithIntrinsicBounds(roleIcon, 0, 0, 0)
             binding.textSelectedState.text =
                 if (isSelected) context.getString(R.string.selected_label) else context.getString(R.string.tap_to_select)
+            binding.textPlayerStats.text = context.getString(
+                R.string.player_stats_format,
+                player.runs,
+                player.wickets,
+                player.fantasyPoints
+            )
 
             binding.cardPlayer.strokeWidth = if (isSelected) 3 else 1
             binding.cardPlayer.strokeColor =

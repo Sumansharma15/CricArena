@@ -38,7 +38,9 @@ class MyMatchesListFragment : Fragment() {
     ): View {
         _binding = FragmentMyMatchesListBinding.inflate(inflater, container, false)
         setupRecycler()
-        fetchMatches()
+        bindObservers()
+        viewModel.setTab(tab)
+        viewModel.observeMatches()
         return binding.root
     }
 
@@ -49,14 +51,17 @@ class MyMatchesListFragment : Fragment() {
         }
     }
 
-    private fun fetchMatches() {
-        setLoading(true)
-        viewModel.fetchMatches(tab) { items, error ->
-            setLoading(false)
-            if (error != null) {
+    private fun bindObservers() {
+        viewModel.items.observe(viewLifecycleOwner) { items ->
+            render(items)
+        }
+        viewModel.loading.observe(viewLifecycleOwner) { isLoading ->
+            setLoading(isLoading)
+        }
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            if (!error.isNullOrBlank()) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
             }
-            render(items)
         }
     }
 

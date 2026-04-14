@@ -10,12 +10,15 @@ import com.example.cricarena.data.model.PlayerPointsEntry
 import com.example.cricarena.data.scoring.FantasyScoringManager
 import com.example.cricarena.databinding.ActivityMatchDetailsBinding
 import com.example.cricarena.util.FirebaseUtils
+import com.google.firebase.firestore.ListenerRegistration
 
 class MatchDetailsActivity : BaseActivity<ActivityMatchDetailsBinding>() {
 
     private val leaderboardAdapter = LeaderboardAdapter()
     private val playerPointsAdapter = PlayerPointsAdapter()
     private val scoringManager = FantasyScoringManager()
+    private var leaderboardListener: ListenerRegistration? = null
+    private var playerPointsListener: ListenerRegistration? = null
 
     override fun setupViewBinding(): ActivityMatchDetailsBinding =
         ActivityMatchDetailsBinding.inflate(layoutInflater)
@@ -52,11 +55,17 @@ class MatchDetailsActivity : BaseActivity<ActivityMatchDetailsBinding>() {
     }
 
     private fun fetchLeaderboard(matchId: String) {
-        FirebaseUtils.teamsCollection()
+        leaderboardListener?.remove()
+        leaderboardListener = FirebaseUtils.teamsCollection()
             .whereEqualTo("matchId", matchId)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val entries = snapshot.documents
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    setLoading(false)
+                    Toast.makeText(this, error.localizedMessage ?: getString(R.string.error_fetch_leaderboard), Toast.LENGTH_LONG).show()
+                    return@addSnapshotListener
+                }
+                val safeSnapshot = snapshot ?: return@addSnapshotListener
+                val entries = safeSnapshot.documents
                     .map {
                         LeaderboardEntry(
                             userName = it.getString("userName").orEmpty().ifBlank { "User" },
@@ -69,19 +78,21 @@ class MatchDetailsActivity : BaseActivity<ActivityMatchDetailsBinding>() {
                 binding.textLeaderboardEmpty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
                 setLoading(false)
             }
-            .addOnFailureListener { e ->
-                setLoading(false)
-                Toast.makeText(this, e.localizedMessage ?: getString(R.string.error_fetch_leaderboard), Toast.LENGTH_LONG).show()
-            }
     }
 
     private fun fetchPlayerPoints(matchId: String) {
-        FirebaseUtils.matchesCollection()
+        playerPointsListener?.remove()
+        playerPointsListener = FirebaseUtils.matchesCollection()
             .document(matchId)
             .collection("playerPoints")
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val entries = snapshot.documents.map {
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    binding.textPlayerPointsEmpty.visibility = View.VISIBLE
+                    Toast.makeText(this, error.localizedMessage ?: getString(R.string.error_fetch_leaderboard), Toast.LENGTH_LONG).show()
+                    return@addSnapshotListener
+                }
+                val safeSnapshot = snapshot ?: return@addSnapshotListener
+                val entries = safeSnapshot.documents.map {
                     PlayerPointsEntry(
                         playerName = it.getString("playerName").orEmpty().ifBlank { "Player" },
                         points = it.getDouble("points") ?: 0.0
@@ -89,9 +100,6 @@ class MatchDetailsActivity : BaseActivity<ActivityMatchDetailsBinding>() {
                 }.sortedByDescending { it.points }
                 playerPointsAdapter.submitList(entries)
                 binding.textPlayerPointsEmpty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
-            }
-            .addOnFailureListener {
-                binding.textPlayerPointsEmpty.visibility = View.VISIBLE
             }
     }
 
@@ -102,5 +110,13 @@ class MatchDetailsActivity : BaseActivity<ActivityMatchDetailsBinding>() {
     companion object {
         const val EXTRA_MATCH_ID = "extra_match_id"
         const val EXTRA_MATCH_NAME = "extra_match_name"
+    }
+
+    override fun onDestroy() {
+        leaderboardListener?.remove()
+        playerPointsListener?.remove()
+        leaderboardListener = null
+        playerPointsListener = null
+        super.onDestroy()
     }
 }

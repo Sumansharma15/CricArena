@@ -1,8 +1,13 @@
 package com.example.cricarena.data.model
 
+import com.google.firebase.Timestamp
+
 data class Match(
     val id: String,
     val title: String = "",
+    val createdBy: String = "",
+    val createdAt: Timestamp? = null,
+    val lastUpdated: Timestamp? = null,
     val teamA: String,
     val teamB: String,
     val matchType: String,

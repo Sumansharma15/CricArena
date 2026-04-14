@@ -1,6 +1,8 @@
 package com.example.cricarena.ui.creatematch
 
+import android.util.Log
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.cricarena.data.model.BallEvent
@@ -9,10 +11,10 @@ import com.example.cricarena.data.model.LivePlayer
 import com.example.cricarena.data.model.LiveTeam
 import com.example.cricarena.data.model.MatchPlayer
 import com.example.cricarena.data.payload.MatchPayloadBuilder
-import com.example.cricarena.util.FirebaseUtils
-import com.google.firebase.firestore.FieldValue
+import com.example.cricarena.data.scoring.ScoringManager
 
 class LiveScoringViewModel : ViewModel() {
+    private val scoringManager = ScoringManager()
 
     private val _players = MutableLiveData<List<LivePlayer>>(emptyList())
     val players: LiveData<List<LivePlayer>> = _players
@@ -34,46 +36,40 @@ class LiveScoringViewModel : ViewModel() {
     private val _filteredPlayers = MutableLiveData<List<LivePlayer>>(emptyList())
     val filteredPlayers: LiveData<List<LivePlayer>> = _filteredPlayers
 
-    private val events = mutableListOf<BallEvent>()
+    private val ballEvents = MediatorLiveData<List<BallEvent>>(emptyList())
+    private var ballEventsSource: LiveData<List<BallEvent>>? = null
+    private var localBallEvents = mutableListOf<BallEvent>()
+    private var basePlayers: List<LivePlayer> = emptyList()
 
     private var firestoreMatchId: String? = null
     private var firestoreTeamA: String = ""
     private var firestoreTeamB: String = ""
-    private var markedLiveOnFirestore = false
 
     /**
      * Builds live players from the squad. Reuses existing [LivePlayer] stats when the stable id matches
      * so runs/balls accumulate across balls (opening the scoring screen must not reset totals).
      */
     fun initialize(matchTitle: String, teamA: String, teamB: String, matchPlayers: List<MatchPlayer>) {
-        val oldById = _players.value.orEmpty().associateBy { it.id }
-        val oldTeams = _teams.value.orEmpty()
-
         val mappedPlayers = matchPlayers.mapIndexed { index, player ->
             val id = MatchPayloadBuilder.stablePlayerId(player.teamName, index + 1, player.name)
-            val existing = oldById[id]
-            if (existing != null) {
-                existing.copy(name = player.name, role = player.role, teamName = player.teamName)
-            } else {
-                LivePlayer(
-                    id = id,
-                    name = player.name,
-                    role = player.role,
-                    teamName = player.teamName
-                )
-            }
+            LivePlayer(
+                id = id,
+                name = player.name,
+                role = player.role,
+                teamName = player.teamName
+            )
         }
-        _players.value = mappedPlayers
+        basePlayers = mappedPlayers
 
         _teams.value = mapOf(
-            teamA to (oldTeams[teamA] ?: LiveTeam(teamA)),
-            teamB to (oldTeams[teamB] ?: LiveTeam(teamB))
+            teamA to LiveTeam(teamA),
+            teamB to LiveTeam(teamB)
         )
         _matchTitle.value = matchTitle
         _selectedTeam.value = teamA
         firestoreTeamA = teamA
         firestoreTeamB = teamB
-        refreshUi()
+        applyRecalculatedState(ballEvents.value.orEmpty())
     }
 
     fun getPlayerState(playerId: String): LivePlayer? =
@@ -86,12 +82,15 @@ class LiveScoringViewModel : ViewModel() {
         firestoreMatchId = matchId
         firestoreTeamA = teamA
         firestoreTeamB = teamB
-        markedLiveOnFirestore = false
+        observeBallEvents(matchId)
     }
 
     fun clearFirestoreAttachment() {
+        ballEventsSource?.let { ballEvents.removeSource(it) }
+        ballEventsSource = null
         firestoreMatchId = null
-        markedLiveOnFirestore = false
+        localBallEvents.clear()
+        ballEvents.value = emptyList()
     }
 
     fun getAttachedMatchId(): String? = firestoreMatchId
@@ -106,150 +105,79 @@ class LiveScoringViewModel : ViewModel() {
     fun getMatchTitle(): String = _matchTitle.value.orEmpty()
 
     fun applyRun(playerId: String, runs: Int) {
-        updatePlayer(playerId) { p ->
-            p.copy(
-                runs = p.runs + runs,
-                balls = p.balls + 1
-            )
-        }
-        updateTeamForPlayer(playerId, addRuns = runs, addBalls = 1)
-        events.add(BallEvent(BallEventType.RUN, playerId, getPlayerTeam(playerId), runs))
-        refreshUi()
-        syncTeamDelta(playerId, addRuns = runs, addBalls = 1, addWicket = 0)
-        syncPlayerStats(playerId, runsDelta = runs.toLong(), ballsDelta = 1, wicketsDelta = 0, catchesDelta = 0)
-        maybeMarkLive()
+        recordEvent(playerId = playerId, type = BallEventType.RUN, runs = runs)
     }
 
     fun applyWide(playerId: String) {
-        updateTeamForPlayer(playerId, addRuns = 1, addBalls = 0)
-        events.add(BallEvent(BallEventType.WIDE, playerId, getPlayerTeam(playerId), 1))
-        refreshUi()
-        syncTeamDelta(playerId, addRuns = 1, addBalls = 0, addWicket = 0)
-        maybeMarkLive()
+        recordEvent(playerId = playerId, type = BallEventType.WIDE, runs = 1)
     }
 
     fun applyNoBall(playerId: String) {
-        updateTeamForPlayer(playerId, addRuns = 1, addBalls = 0)
-        events.add(BallEvent(BallEventType.NO_BALL, playerId, getPlayerTeam(playerId), 1))
-        refreshUi()
-        syncTeamDelta(playerId, addRuns = 1, addBalls = 0, addWicket = 0)
-        maybeMarkLive()
+        recordEvent(playerId = playerId, type = BallEventType.NO_BALL, runs = 1)
     }
 
     fun applyBye(playerId: String) {
-        updateTeamForPlayer(playerId, addRuns = 1, addBalls = 1)
-        events.add(BallEvent(BallEventType.BYE, playerId, getPlayerTeam(playerId), 1))
-        refreshUi()
-        syncTeamDelta(playerId, addRuns = 1, addBalls = 1, addWicket = 0)
-        maybeMarkLive()
+        recordEvent(playerId = playerId, type = BallEventType.BYE, runs = 1)
     }
 
     fun applyWicket(playerId: String) {
-        updatePlayer(playerId) { it.copy(isOut = true, balls = it.balls + 1) }
-        updateTeamForPlayer(playerId, addRuns = 0, addBalls = 1, addWicket = 1)
-        events.add(BallEvent(BallEventType.WICKET, playerId, getPlayerTeam(playerId)))
-        refreshUi()
-        syncTeamDelta(playerId, addRuns = 0, addBalls = 1, addWicket = 1)
-        syncPlayerStats(playerId, runsDelta = 0, ballsDelta = 1, wicketsDelta = 1, catchesDelta = 0)
-        maybeMarkLive()
+        recordEvent(playerId = playerId, type = BallEventType.WICKET, runs = 0)
     }
 
     fun applyCatch(playerId: String) {
-        updatePlayer(playerId) { it.copy(catches = it.catches + 1, isOut = true, balls = it.balls + 1) }
-        updateTeamForPlayer(playerId, addRuns = 0, addBalls = 1, addWicket = 1)
-        events.add(BallEvent(BallEventType.CATCH, playerId, getPlayerTeam(playerId)))
-        refreshUi()
-        syncTeamDelta(playerId, addRuns = 0, addBalls = 1, addWicket = 1)
-        syncPlayerStats(playerId, runsDelta = 0, ballsDelta = 1, wicketsDelta = 1, catchesDelta = 1)
-        maybeMarkLive()
+        recordEvent(playerId = playerId, type = BallEventType.CATCH, runs = 0)
     }
 
-    private fun updatePlayer(playerId: String, transform: (LivePlayer) -> LivePlayer) {
-        val current = _players.value.orEmpty().toMutableList()
-        val index = current.indexOfFirst { it.id == playerId }
-        if (index >= 0) {
-            current[index] = transform(current[index])
-            _players.value = current
+    private fun observeBallEvents(matchId: String) {
+        ballEventsSource?.let { ballEvents.removeSource(it) }
+        val source = scoringManager.getBallEvents(matchId)
+        ballEventsSource = source
+        ballEvents.addSource(source) { events ->
+            ballEvents.value = events
+            applyRecalculatedState(events)
         }
     }
 
-    private fun updateTeamForPlayer(
-        playerId: String,
-        addRuns: Int,
-        addBalls: Int,
-        addWicket: Int = 0
-    ) {
+    private fun recordEvent(playerId: String, type: BallEventType, runs: Int) {
         val teamName = getPlayerTeam(playerId)
-        val current = _teams.value.orEmpty().toMutableMap()
-        val team = current[teamName] ?: return
-        current[teamName] = team.copy(
-            totalRuns = team.totalRuns + addRuns,
-            wickets = team.wickets + addWicket,
-            ballsDelivered = team.ballsDelivered + addBalls
+        if (playerId.isBlank() || teamName.isBlank()) return
+        val event = BallEvent(
+            type = type,
+            playerId = playerId,
+            teamName = teamName,
+            runs = runs
         )
-        _teams.value = current
+        val matchId = firestoreMatchId
+        if (matchId.isNullOrBlank()) {
+            localBallEvents.add(event)
+            applyRecalculatedState(localBallEvents)
+            return
+        }
+        scoringManager.addBallEvent(matchId, event) { success, error ->
+            if (!success) {
+                Log.e(ERROR_TAG, error ?: "Failed to append ball event")
+            }
+        }
     }
 
     private fun getPlayerTeam(playerId: String): String {
-        return _players.value.orEmpty().firstOrNull { it.id == playerId }?.teamName.orEmpty()
+        return basePlayers.firstOrNull { it.id == playerId }?.teamName.orEmpty()
     }
 
-    private fun liveScoreKeyForTeam(teamName: String): String? = when (teamName) {
-        firestoreTeamA -> "liveScoreA"
-        firestoreTeamB -> "liveScoreB"
-        else -> null
-    }
-
-    private fun syncTeamDelta(
-        playerId: String,
-        addRuns: Int,
-        addBalls: Int,
-        addWicket: Int
-    ) {
-        val mid = firestoreMatchId ?: return
-        val teamName = getPlayerTeam(playerId)
-        val key = liveScoreKeyForTeam(teamName) ?: return
-        val ref = FirebaseUtils.matchesCollection().document(mid)
-        val updates = mutableMapOf<String, Any>()
-        if (addRuns != 0) {
-            updates["$key.runs"] = FieldValue.increment(addRuns.toLong())
+    private fun applyRecalculatedState(events: List<BallEvent>) {
+        val result = scoringManager.recalculateMatchStats(events, basePlayers, firestoreTeamA, firestoreTeamB)
+        _players.value = result.players
+        _teams.value = result.teams
+        refreshUi()
+        val matchId = firestoreMatchId
+        if (!matchId.isNullOrBlank()) {
+            scoringManager.persistDerivedStats(
+                matchId = matchId,
+                teamA = firestoreTeamA,
+                teamB = firestoreTeamB,
+                result = result
+            )
         }
-        if (addBalls != 0) {
-            updates["$key.balls"] = FieldValue.increment(addBalls.toLong())
-        }
-        if (addWicket != 0) {
-            updates["$key.wickets"] = FieldValue.increment(addWicket.toLong())
-        }
-        if (updates.isEmpty()) return
-        ref.update(updates)
-    }
-
-    private fun syncPlayerStats(
-        playerId: String,
-        runsDelta: Long,
-        ballsDelta: Long,
-        wicketsDelta: Long,
-        catchesDelta: Long
-    ) {
-        val mid = firestoreMatchId ?: return
-        if (runsDelta == 0L && ballsDelta == 0L && wicketsDelta == 0L && catchesDelta == 0L) return
-        val updates = mutableMapOf<String, Any>()
-        if (runsDelta != 0L) updates["runs"] = FieldValue.increment(runsDelta)
-        if (ballsDelta != 0L) updates["balls"] = FieldValue.increment(ballsDelta)
-        if (wicketsDelta != 0L) updates["wickets"] = FieldValue.increment(wicketsDelta)
-        if (catchesDelta != 0L) updates["catches"] = FieldValue.increment(catchesDelta)
-        FirebaseUtils.matchesCollection().document(mid)
-            .collection("playerStats")
-            .document(playerId)
-            .update(updates)
-    }
-
-    private fun maybeMarkLive() {
-        val mid = firestoreMatchId ?: return
-        if (markedLiveOnFirestore) return
-        markedLiveOnFirestore = true
-        FirebaseUtils.matchesCollection().document(mid)
-            .update("status", "LIVE")
     }
 
     private fun refreshUi() {
@@ -276,5 +204,15 @@ class LiveScoringViewModel : ViewModel() {
         val overs = totalBalls / 6
         val balls = totalBalls % 6
         return "$overs.$balls"
+    }
+
+    override fun onCleared() {
+        ballEventsSource?.let { ballEvents.removeSource(it) }
+        ballEventsSource = null
+        super.onCleared()
+    }
+
+    companion object {
+        private const val ERROR_TAG = "FIREBASE_ERROR"
     }
 }

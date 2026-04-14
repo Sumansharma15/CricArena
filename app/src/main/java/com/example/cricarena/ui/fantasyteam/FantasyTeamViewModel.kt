@@ -2,13 +2,14 @@ package com.example.cricarena.ui.fantasyteam
 
 import android.util.Log
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.cricarena.data.model.FantasyPlayer
+import com.example.cricarena.data.model.Match
 import com.example.cricarena.data.repository.FirebaseRepository
 import com.example.cricarena.util.FirebaseUtils
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 
 data class SavedFantasySelection(
@@ -19,10 +20,19 @@ data class SavedFantasySelection(
 
 class FantasyTeamViewModel : ViewModel() {
     private val repository = FirebaseRepository()
-    private var playersListener: ListenerRegistration? = null
+    private var playersSource: LiveData<List<FantasyPlayer>>? = null
+    private var matchesSource: LiveData<List<Match>>? = null
+    private var hasEligibleMatchesLoadedOnce: Boolean = false
 
-    private val _players = MutableLiveData<List<FantasyPlayer>>(emptyList())
+    private val _players = MediatorLiveData<List<FantasyPlayer>>(emptyList())
     val players: LiveData<List<FantasyPlayer>> = _players
+
+    private val _eligibleMatches = MediatorLiveData<List<Match>>(emptyList())
+    val eligibleMatches: LiveData<List<Match>> = _eligibleMatches
+
+    /** True until the first Firestore snapshot for the match list is applied (same race as Home). */
+    private val _eligibleMatchesLoading = MutableLiveData(true)
+    val eligibleMatchesLoading: LiveData<Boolean> = _eligibleMatchesLoading
 
     private val _loading = MutableLiveData(false)
     val loading: LiveData<Boolean> = _loading
@@ -35,32 +45,59 @@ class FantasyTeamViewModel : ViewModel() {
 
     private fun teamDocumentId(userId: String, matchId: String): String = "${userId}_$matchId"
 
-    fun observePlayers(matchId: String) {
+    /**
+     * Matches available for fantasy (all non-draft matches from Home feed).
+     */
+    fun observeEligibleMatches() {
+        if (matchesSource != null) {
+            _eligibleMatchesLoading.value = !hasEligibleMatchesLoadedOnce
+            return
+        }
+        val source = repository.getMatches()
+        matchesSource = source
+        _eligibleMatches.addSource(source) { list ->
+            _eligibleMatches.value = list
+                .filter { it.id.isNotBlank() }
+                .sortedByDescending {
+                    it.lastUpdated?.toDate()?.time
+                        ?: it.createdAt?.toDate()?.time
+                        ?: 0L
+                }
+            hasEligibleMatchesLoadedOnce = true
+            _eligibleMatchesLoading.value = false
+        }
+    }
+
+    /**
+     * Stops listening to players and clears selection-related state in VM when switching matches.
+     */
+    fun resetPlayerStreams() {
+        playersSource?.let { _players.removeSource(it) }
+        playersSource = null
+        _players.value = emptyList()
+        _savedTeam.value = null
+        _loadError.value = null
+    }
+
+    fun loadMatchForFantasy(matchId: String) {
         if (matchId.isBlank()) {
             _loadError.value = "Match ID is missing."
             return
         }
-        if (playersListener != null) return
-
+        resetPlayerStreams()
         _loading.value = true
         _loadError.value = null
-        Log.d(TAG, "observePlayers called, matchId: $matchId")
-        playersListener = repository.getPlayers(
-            matchId = matchId,
-            onData = { list ->
-                _players.value = list
-                _loading.value = false
-            },
-            onError = { message ->
-                _loadError.value = message
-                _loading.value = false
-            }
-        )
+        Log.d(TAG, "loadMatchForFantasy: $matchId")
+        val source = repository.getPlayers(matchId)
+        playersSource = source
+        _players.addSource(source) { list ->
+            _players.value = list
+            _loading.value = false
+        }
     }
 
     /**
      * Loads the current user's saved fantasy XI for this match, if any.
-     * Uses a stable doc id userId_matchId; falls back to querying older `.add()` saves.
      */
     fun fetchSavedTeam(
         matchId: String,
@@ -74,39 +111,48 @@ class FantasyTeamViewModel : ViewModel() {
         }
         val teams = FirebaseUtils.teamsCollection()
         val docId = teamDocumentId(userId, matchId)
-        teams.document(docId).get()
-            .addOnSuccessListener { snap ->
-                if (snap.exists()) {
-                    val parsed = parseSavedSelection(snap.data)
-                    _savedTeam.value = parsed
-                    onResult(parsed, null)
-                    return@addOnSuccessListener
+        var docListener: com.google.firebase.firestore.ListenerRegistration? = null
+        docListener = teams.document(docId).addSnapshotListener { snap, docErr ->
+            if (docErr != null) {
+                Log.e(TAG, "Error loading saved team doc for matchId: $matchId", docErr)
+                onResult(null, docErr.localizedMessage)
+                docListener?.remove()
+                return@addSnapshotListener
+            }
+            if (snap != null && snap.exists()) {
+                val parsed = parseSavedSelection(snap.data)
+                _savedTeam.value = parsed
+                onResult(parsed, null)
+                docListener?.remove()
+                return@addSnapshotListener
+            }
+            var queryListener: com.google.firebase.firestore.ListenerRegistration? = null
+            queryListener = teams
+                .whereEqualTo("matchId", matchId)
+                .addSnapshotListener { qs, qsErr ->
+                    if (qsErr != null) {
+                        Log.e(TAG, "Error loading saved team for matchId: $matchId", qsErr)
+                        onResult(null, qsErr.localizedMessage)
+                        queryListener?.remove()
+                        docListener?.remove()
+                        return@addSnapshotListener
+                    }
+                    val doc = qs?.documents
+                        .orEmpty()
+                        .filter { it.getString("userId") == userId }
+                        .maxByOrNull { it.getTimestamp("createdAt")?.toDate()?.time ?: 0L }
+                    if (doc == null) {
+                        _savedTeam.value = null
+                        onResult(null, null)
+                    } else {
+                        val parsed = parseSavedSelection(doc.data)
+                        _savedTeam.value = parsed
+                        onResult(parsed, null)
+                    }
+                    queryListener?.remove()
+                    docListener?.remove()
                 }
-                teams
-                    .whereEqualTo("matchId", matchId)
-                    .get()
-                    .addOnSuccessListener { qs ->
-                        val doc = qs.documents
-                            .filter { it.getString("userId") == userId }
-                            .maxByOrNull { it.getTimestamp("createdAt")?.toDate()?.time ?: 0L }
-                        if (doc == null) {
-                            _savedTeam.value = null
-                            onResult(null, null)
-                        } else {
-                            val parsed = parseSavedSelection(doc.data)
-                            _savedTeam.value = parsed
-                            onResult(parsed, null)
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e(TAG, "Error loading saved team for matchId: $matchId", e)
-                        onResult(null, e.localizedMessage)
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Error loading saved team doc for matchId: $matchId", e)
-                onResult(null, e.localizedMessage)
-            }
+        }
     }
 
     private fun parseSavedSelection(data: Map<String, Any>?): SavedFantasySelection? {
@@ -128,6 +174,7 @@ class FantasyTeamViewModel : ViewModel() {
 
     fun saveTeam(
         matchId: String,
+        matchDisplayName: String,
         selectedPlayers: List<FantasyPlayer>,
         captainId: String,
         viceCaptainId: String,
@@ -141,25 +188,29 @@ class FantasyTeamViewModel : ViewModel() {
         Log.d(TAG, "Saving team for matchId: $matchId, players=${selectedPlayers.size}")
 
         val docRef = FirebaseUtils.teamsCollection().document(teamDocumentId(userId, matchId))
-        val payload = hashMapOf<String, Any>(
-            "userId" to userId,
-            "matchId" to matchId,
-            "captainId" to captainId,
-            "viceCaptainId" to viceCaptainId,
-            "players" to selectedPlayers.map { player ->
-                mapOf(
-                    "id" to player.id,
-                    "name" to player.name,
-                    "role" to player.role,
-                    "isCaptain" to (player.id == captainId),
-                    "isViceCaptain" to (player.id == viceCaptainId)
-                )
-            },
-            "updatedAt" to FieldValue.serverTimestamp()
-        )
-
         docRef.get()
             .addOnSuccessListener { snap ->
+                val payload = hashMapOf<String, Any>(
+                    "userId" to userId,
+                    "matchId" to matchId,
+                    "matchName" to matchDisplayName.ifBlank { "Match $matchId" },
+                    "captainId" to captainId,
+                    "viceCaptainId" to viceCaptainId,
+                    "players" to selectedPlayers.map { player ->
+                        mapOf(
+                            "id" to player.id,
+                            "name" to player.name,
+                            "role" to player.role,
+                            "team" to player.team,
+                            "isCaptain" to (player.id == captainId),
+                            "isViceCaptain" to (player.id == viceCaptainId)
+                        )
+                    },
+                    "totalPoints" to 0.0,
+                    "rank" to 0,
+                    "status" to "ACTIVE",
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
                 if (!snap.exists()) {
                     payload["createdAt"] = FieldValue.serverTimestamp()
                 }
@@ -171,14 +222,16 @@ class FantasyTeamViewModel : ViewModel() {
                     }
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Failed loading team doc before save for matchId: $matchId", e)
+                Log.e(TAG, "Failed reading team doc before save", e)
                 onResult(false, e.localizedMessage ?: "Failed to save team.")
             }
     }
 
     override fun onCleared() {
-        playersListener?.remove()
-        playersListener = null
+        playersSource?.let { _players.removeSource(it) }
+        playersSource = null
+        matchesSource?.let { _eligibleMatches.removeSource(it) }
+        matchesSource = null
         super.onCleared()
     }
 

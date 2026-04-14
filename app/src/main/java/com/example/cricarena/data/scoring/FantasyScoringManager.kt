@@ -1,5 +1,9 @@
 package com.example.cricarena.data.scoring
 
+import android.util.Log
+import com.example.cricarena.data.model.BallEvent
+import com.example.cricarena.data.model.BallEventType
+import com.example.cricarena.data.model.LivePlayer
 import com.example.cricarena.util.FirebaseUtils
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,6 +12,7 @@ import kotlin.math.round
 class FantasyScoringManager(
     private val firestore: FirebaseFirestore = FirebaseUtils.firestore
 ) {
+    private val scoringManager = ScoringManager()
 
     fun calculateAndStoreResults(
         matchId: String,
@@ -20,16 +25,24 @@ class FantasyScoringManager(
 
         FirebaseUtils.matchesCollection().document(matchId).get()
             .addOnSuccessListener { matchDoc ->
+                val teamAName = matchDoc.getString("teamAName") ?: matchDoc.getString("teamA").orEmpty()
+                val teamBName = matchDoc.getString("teamBName") ?: matchDoc.getString("teamB").orEmpty()
                 val scoringRules = matchDoc.get("scoringRules") as? Map<*, *>
                 val runPoint = (scoringRules?.get("runs") as? Number)?.toDouble() ?: 1.0
                 val wicketPoint = (scoringRules?.get("wickets") as? Number)?.toDouble() ?: 25.0
                 val catchPoint = (scoringRules?.get("catch") as? Number)?.toDouble() ?: 8.0
 
-                fetchPlayerStats(matchId) { statsMap, statsError ->
-                    if (statsError != null) {
-                        onResult(false, statsError)
-                        return@fetchPlayerStats
+                loadPlayersAndEvents(matchId) { players, events, loadError ->
+                    if (loadError != null) {
+                        onResult(false, loadError)
+                        return@loadPlayersAndEvents
                     }
+                    if (players.isEmpty()) {
+                        onResult(false, "No players found for scoring.")
+                        return@loadPlayersAndEvents
+                    }
+                    val derived = scoringManager.recalculateMatchStats(events, players, teamAName, teamBName)
+                    val statsMap = derived.players.associateBy { "id:${it.id}" }
 
                     FirebaseUtils.teamsCollection()
                         .whereEqualTo("matchId", matchId)
@@ -50,15 +63,15 @@ class FantasyScoringManager(
                                 players.forEach { playerRaw ->
                                     val playerMap = playerRaw as? Map<*, *> ?: return@forEach
                                     val playerId = playerMap["id"]?.toString().orEmpty()
-                                    val playerName = playerMap["name"]?.toString().orEmpty()
-                                    val key = if (playerId.isNotBlank()) {
-                                        "id:$playerId"
-                                    } else {
-                                        "name:${playerName.lowercase()}"
-                                    }
-                                    val stats = statsMap[key] ?: PlayerStats()
+                                    val stats = statsMap["id:$playerId"] ?: LivePlayer(
+                                        id = playerId,
+                                        name = playerMap["name"]?.toString().orEmpty(),
+                                        role = playerMap["role"]?.toString().orEmpty(),
+                                        teamName = playerMap["team"]?.toString().orEmpty()
+                                    )
+                                    val wicketCount = if (stats.isOut) 1 else 0
                                     val base = (stats.runs * runPoint) +
-                                        (stats.wickets * wicketPoint) +
+                                        (wicketCount * wicketPoint) +
                                         (stats.catches * catchPoint)
                                     val multiplier = when {
                                         captainId.isNotBlank() && captainId == playerId -> 2.0
@@ -96,10 +109,11 @@ class FantasyScoringManager(
 
                             // Store global player points breakdown for match details screen.
                             statsMap.forEach { (key, stats) ->
+                                val wicketCount = if (stats.isOut) 1 else 0
                                 val basePoints = (stats.runs * runPoint) +
-                                    (stats.wickets * wicketPoint) +
+                                    (wicketCount * wicketPoint) +
                                     (stats.catches * catchPoint)
-                                val playerName = key.removePrefix("name:").removePrefix("id:")
+                                val playerName = stats.name.ifBlank { key.removePrefix("id:") }
                                 val docRef = FirebaseUtils.matchesCollection()
                                     .document(matchId)
                                     .collection("playerPoints")
@@ -109,7 +123,7 @@ class FantasyScoringManager(
                                     mapOf(
                                         "playerName" to playerName,
                                         "runs" to stats.runs,
-                                        "wickets" to stats.wickets,
+                                        "wickets" to wicketCount,
                                         "catches" to stats.catches,
                                         "points" to (round(basePoints * 10.0) / 10.0),
                                         "updatedAt" to FieldValue.serverTimestamp()
@@ -128,7 +142,10 @@ class FantasyScoringManager(
                             }
 
                             batch.commit()
-                                .addOnSuccessListener { onResult(true, null) }
+                                .addOnSuccessListener {
+                                    Log.d(TAG, "Leaderboard updated for matchId=$matchId")
+                                    onResult(true, null)
+                                }
                                 .addOnFailureListener { e ->
                                     onResult(false, e.localizedMessage ?: "Failed to store match scores.")
                                 }
@@ -143,65 +160,60 @@ class FantasyScoringManager(
             }
     }
 
-    private fun fetchPlayerStats(
+    private fun loadPlayersAndEvents(
         matchId: String,
-        onResult: (Map<String, PlayerStats>, String?) -> Unit
+        onResult: (List<LivePlayer>, List<BallEvent>, String?) -> Unit
     ) {
         FirebaseUtils.matchesCollection()
             .document(matchId)
-            .collection("playerStats")
+            .collection("players")
             .get()
-            .addOnSuccessListener { statsSnapshot ->
-                val statsByKey = mutableMapOf<String, PlayerStats>()
-                statsSnapshot.documents.forEach { doc ->
-                    val playerId = doc.getString("playerId").orEmpty()
-                    val playerName = doc.getString("playerName").orEmpty()
-                    val stats = PlayerStats(
-                        runs = (doc.getLong("runs") ?: 0L).toInt(),
-                        wickets = (doc.getLong("wickets") ?: 0L).toInt(),
-                        catches = (doc.getLong("catches") ?: 0L).toInt()
-                    )
-                    if (playerId.isNotBlank()) {
-                        statsByKey["id:$playerId"] = stats
-                    }
-                    if (playerName.isNotBlank()) {
-                        statsByKey["name:${playerName.lowercase()}"] = stats
+            .addOnSuccessListener { playerSnapshot ->
+                val players = playerSnapshot.documents.mapNotNull { doc ->
+                    val id = doc.getString("id").orEmpty().ifBlank { doc.id }
+                    val name = doc.getString("name").orEmpty()
+                    val role = doc.getString("role").orEmpty()
+                    val team = doc.getString("team").orEmpty()
+                    if (id.isBlank() || name.isBlank() || role.isBlank() || team.isBlank()) {
+                        null
+                    } else {
+                        LivePlayer(
+                            id = id,
+                            name = name,
+                            role = role,
+                            teamName = team
+                        )
                     }
                 }
-
-                if (statsByKey.isNotEmpty()) {
-                    onResult(statsByKey, null)
-                } else {
-                    // Fallback: read stats if embedded in match players array.
-                    FirebaseUtils.matchesCollection().document(matchId).get()
-                        .addOnSuccessListener { matchDoc ->
-                            val players = matchDoc.get("players") as? List<*> ?: emptyList<Any>()
-                            val fallbackMap = mutableMapOf<String, PlayerStats>()
-                            players.forEach { playerRaw ->
-                                val map = playerRaw as? Map<*, *> ?: return@forEach
-                                val id = map["id"]?.toString().orEmpty()
-                                val name = map["name"]?.toString().orEmpty()
-                                val stats = PlayerStats(
-                                    runs = (map["runs"] as? Number)?.toInt() ?: 0,
-                                    wickets = (map["wickets"] as? Number)?.toInt() ?: 0,
-                                    catches = (map["catches"] as? Number)?.toInt() ?: 0
-                                )
-                                if (id.isNotBlank()) fallbackMap["id:$id"] = stats
-                                if (name.isNotBlank()) fallbackMap["name:${name.lowercase()}"] = stats
-                            }
-                            if (fallbackMap.isEmpty()) {
-                                onResult(emptyMap(), "No player stats found for scoring.")
-                            } else {
-                                onResult(fallbackMap, null)
-                            }
+                FirebaseUtils.matchesCollection()
+                    .document(matchId)
+                    .collection("ballEvents")
+                    .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.ASCENDING)
+                    .get()
+                    .addOnSuccessListener { eventSnapshot ->
+                        val events = eventSnapshot.documents.mapNotNull { doc ->
+                            val typeName = doc.getString("type").orEmpty()
+                            val type = runCatching { BallEventType.valueOf(typeName) }.getOrNull() ?: return@mapNotNull null
+                            val playerId = doc.getString("playerId").orEmpty()
+                            val team = doc.getString("team").orEmpty()
+                            if (playerId.isBlank() || team.isBlank()) return@mapNotNull null
+                            BallEvent(
+                                id = doc.id,
+                                type = type,
+                                playerId = playerId,
+                                teamName = team,
+                                runs = (doc.getLong("runs") ?: 0L).toInt(),
+                                timestamp = doc.getLong("timestamp") ?: 0L
+                            )
                         }
-                        .addOnFailureListener { e ->
-                            onResult(emptyMap(), e.localizedMessage ?: "Failed to load player stats.")
-                        }
-                }
+                        onResult(players, events, null)
+                    }
+                    .addOnFailureListener { e ->
+                        onResult(players, emptyList(), e.localizedMessage ?: "Failed to load ball events.")
+                    }
             }
             .addOnFailureListener { e ->
-                onResult(emptyMap(), e.localizedMessage ?: "Failed to load player stats.")
+                onResult(emptyList(), emptyList(), e.localizedMessage ?: "Failed to load players.")
             }
     }
 
@@ -212,13 +224,11 @@ class FantasyScoringManager(
             .replace(".", "_")
             .ifBlank { "player" }
     }
-}
 
-private data class PlayerStats(
-    val runs: Int = 0,
-    val wickets: Int = 0,
-    val catches: Int = 0
-)
+    companion object {
+        private const val TAG = "FIREBASE_DEBUG"
+    }
+}
 
 private data class TeamScore(
     val teamDocId: String,

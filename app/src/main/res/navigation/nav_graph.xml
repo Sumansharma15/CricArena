@@ -9,7 +9,12 @@
         android:id="@+id/homeFragment"
         android:name="com.example.cricarena.ui.home.HomeFragment"
         android:label="Home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_home_to_fantasy"
+            app:destination="@id/fantasyTeamFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/createMatchFragment"

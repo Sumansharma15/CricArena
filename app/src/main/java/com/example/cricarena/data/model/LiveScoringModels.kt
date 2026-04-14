@@ -28,6 +28,7 @@ enum class BallEventType {
 }
 
 data class BallEvent(
+    val id: String = "",
     val type: BallEventType,
     val playerId: String,
     val teamName: String,

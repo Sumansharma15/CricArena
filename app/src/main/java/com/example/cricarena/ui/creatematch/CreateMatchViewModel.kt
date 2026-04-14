@@ -39,8 +39,15 @@ class CreateMatchViewModel : ViewModel() {
             "liveScoreA" to MatchPayloadBuilder.emptyLiveScoreMap(),
             "liveScoreB" to MatchPayloadBuilder.emptyLiveScoreMap(),
             "status" to status,
+            "source" to "MANUAL",
+            "scoringRules" to mapOf(
+                "runs" to 1.0,
+                "wickets" to 25.0,
+                "catch" to 8.0
+            ),
             "createdBy" to userId,
-            "createdAt" to FieldValue.serverTimestamp()
+            "createdAt" to FieldValue.serverTimestamp(),
+            "lastUpdated" to FieldValue.serverTimestamp()
         )
 
         val matchRef = FirebaseUtils.matchesCollection().document()
