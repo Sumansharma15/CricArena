@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Dark Blue Theme -->
-    <color name="primary">#0B2B40</color>
-    <color name="primaryDark">#1C9EF8</color>
-    <color name="accent">#4CAF50</color> <!-- A contrasting green for cricket feel -->
+    <color name="primary">#0D47A1</color>
+    <color name="primaryDark">#0A3A84</color>
+    <color name="accent">#2E7D32</color>
+    <color name="buttonPrimary">#0D47A1</color>
+    <color name="buttonPrimaryPressed">#0A3A84</color>
+    <color name="buttonSoft">#FFFFFF</color>
+    <color name="buttonBorder">#0D47A1</color>
     
-    <color name="background">#F5F7FA</color>
-    <color name="surface">#FFFFFF</color>
+    <color name="background">#F5F5F5</color>
+    <color name="surface">#FDFEFF</color>
     <color name="textPrimary">#212121</color>
     <color name="textSecondary">#757575</color>
     <color name="liveRed">#E53935</color>
-    <color name="headerGradientStart">#73BEF2</color>
-    <color name="headerGradientEnd">#B3CEE0</color>
+    <color name="headerGradientStart">#1A5BB8</color>
+    <color name="headerGradientEnd">#0D47A1</color>
     <color name="headerTextOnGradient">#F2F8FC</color>
     <color name="roleAccentBat">#FF8F00</color>
     <color name="roleAccentBall">#1976D2</color>
@@ -20,4 +24,5 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="cardShadow">#1A000000</color>
+    <color name="selectCardTint">#E8F5E9</color>
 </resources>

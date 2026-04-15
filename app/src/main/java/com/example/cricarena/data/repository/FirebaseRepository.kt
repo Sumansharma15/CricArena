@@ -191,6 +191,23 @@ class FirebaseRepository(
             }
     }
 
+    fun deleteMatch(
+        matchId: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        if (matchId.isBlank()) {
+            onResult(false, "Match id is required.")
+            return
+        }
+        FirebaseUtils.matchDocument(matchId)
+            .delete()
+            .addOnSuccessListener { onResult(true, null) }
+            .addOnFailureListener { e ->
+                Log.e(ERROR_TAG, e.message ?: "Failed to delete match", e)
+                onResult(false, e.localizedMessage ?: "Failed to delete match.")
+            }
+    }
+
     private fun DocumentSnapshot.toUiMatch(): Match? {
         // Only exclude explicit drafts; missing/legacy status is shown (not treated as DRAFT).
         val statusStr = getString("status").orEmpty()
@@ -262,7 +279,9 @@ class FirebaseRepository(
         val wB = (b["wickets"] as? Number)?.toInt() ?: 0
         val ballsB = (b["balls"] as? Number)?.toInt() ?: 0
         if (rA == 0 && wA == 0 && ballsA == 0 && rB == 0 && wB == 0 && ballsB == 0) return null
-        return "$teamAName $rA/$wA vs $teamBName $rB/$wB"
+        val oA = formatOvers(ballsA)
+        val oB = formatOvers(ballsB)
+        return "$teamAName $rA/$wA ($oA) vs $teamBName $rB/$wB ($oB)"
     }
 
     private fun formatOvers(balls: Int): String {

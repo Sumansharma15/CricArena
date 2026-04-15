@@ -17,13 +17,14 @@ import com.example.cricarena.data.model.MatchStatus
 import com.example.cricarena.databinding.FragmentHomeBinding
 import com.example.cricarena.ui.fantasyteam.FantasyMatchSession
 import com.example.cricarena.ui.fantasyteam.FantasyTeamFragment
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding ?: error("Binding is only valid between onCreateView and onDestroyView.")
     private val viewModel: HomeViewModel by viewModels()
-    private val matchAdapter = MatchAdapter(::onJoinMatch)
+    private val matchAdapter = MatchAdapter(::onJoinMatch, ::onMatchLongPress)
     private var loadedMatches: List<Match> = emptyList()
 
     override fun onCreateView(
@@ -105,6 +106,27 @@ class HomeFragment : Fragment() {
             putString(FantasyTeamFragment.ARG_MATCH_ID, match.id)
         }
         findNavController().navigate(R.id.action_home_to_fantasy, bundle)
+    }
+
+    private fun onMatchLongPress(match: Match) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.delete_match_title)
+            .setMessage(getString(R.string.delete_match_message, match.title.ifBlank { "${match.teamA} vs ${match.teamB}" }))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete_match_confirm) { _, _ ->
+                viewModel.deleteMatch(match.id) { success, error ->
+                    if (success) {
+                        Toast.makeText(requireContext(), R.string.delete_match_success, Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            error ?: getString(R.string.delete_match_failed),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .show()
     }
 
     private fun renderMatches(matches: List<Match>, stillLoading: Boolean = viewModel.loading.value == true) {

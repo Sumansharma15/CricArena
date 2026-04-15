@@ -75,21 +75,38 @@ class FantasyPlayerAdapter(
             binding.cardPlayer.strokeWidth = if (isSelected) 3 else 1
             binding.cardPlayer.strokeColor =
                 context.getColor(if (isSelected) R.color.primary else R.color.background)
+            binding.cardPlayer.setCardBackgroundColor(
+                context.getColor(if (isSelected) R.color.selectCardTint else R.color.surface)
+            )
 
-            binding.buttonCaptain.text = if (isCaptain) {
+            binding.textCaptainOption.text = if (isCaptain) {
                 context.getString(R.string.captain_selected)
             } else {
                 context.getString(R.string.set_captain)
             }
-            binding.buttonViceCaptain.text = if (isViceCaptain) {
+            binding.textViceCaptainOption.text = if (isViceCaptain) {
                 context.getString(R.string.vice_captain_selected)
             } else {
                 context.getString(R.string.set_vice_captain)
             }
 
+            binding.cardCaptainOption.strokeWidth = if (isCaptain) 2 else 1
+            binding.cardCaptainOption.strokeColor =
+                context.getColor(if (isCaptain) R.color.accent else R.color.buttonBorder)
+            binding.cardCaptainOption.setCardBackgroundColor(
+                context.getColor(if (isCaptain) R.color.selectCardTint else R.color.surface)
+            )
+
+            binding.cardViceCaptainOption.strokeWidth = if (isViceCaptain) 2 else 1
+            binding.cardViceCaptainOption.strokeColor =
+                context.getColor(if (isViceCaptain) R.color.accent else R.color.buttonBorder)
+            binding.cardViceCaptainOption.setCardBackgroundColor(
+                context.getColor(if (isViceCaptain) R.color.selectCardTint else R.color.surface)
+            )
+
             binding.cardPlayer.setOnClickListener { onPlayerToggle(player) }
-            binding.buttonCaptain.setOnClickListener { onCaptainClick(player) }
-            binding.buttonViceCaptain.setOnClickListener { onViceCaptainClick(player) }
+            binding.cardCaptainOption.setOnClickListener { onCaptainClick(player) }
+            binding.cardViceCaptainOption.setOnClickListener { onViceCaptainClick(player) }
         }
     }
 }

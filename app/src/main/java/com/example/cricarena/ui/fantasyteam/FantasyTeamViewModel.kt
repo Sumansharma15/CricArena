@@ -206,9 +206,6 @@ class FantasyTeamViewModel : ViewModel() {
                             "isViceCaptain" to (player.id == viceCaptainId)
                         )
                     },
-                    "totalPoints" to 0.0,
-                    "rank" to 0,
-                    "status" to "ACTIVE",
                     "updatedAt" to FieldValue.serverTimestamp()
                 )
                 if (!snap.exists()) {

@@ -12,7 +12,8 @@ import com.example.cricarena.data.model.MatchStatus
 import com.example.cricarena.databinding.ItemMatchBinding
 
 class MatchAdapter(
-    private val onJoinClick: (Match) -> Unit
+    private val onJoinClick: (Match) -> Unit,
+    private val onLongPress: (Match) -> Unit
 ) : RecyclerView.Adapter<MatchAdapter.MatchViewHolder>() {
 
     private val items = mutableListOf<Match>()
@@ -87,6 +88,10 @@ class MatchAdapter(
             binding.root.setOnClickListener {
                 Log.d("NAV_DEBUG", "Card clicked from adapter for matchId=${item.id}")
                 onJoinClick(item)
+            }
+            binding.root.setOnLongClickListener {
+                onLongPress(item)
+                true
             }
         }
     }

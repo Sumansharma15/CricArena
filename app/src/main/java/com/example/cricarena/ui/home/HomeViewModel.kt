@@ -48,6 +48,18 @@ class HomeViewModel(
         }
     }
 
+    fun deleteMatch(
+        matchId: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        repository.deleteMatch(matchId) { success, error ->
+            if (!success) {
+                _loadError.value = error ?: "Failed to delete match."
+            }
+            onResult(success, error)
+        }
+    }
+
     override fun onCleared() {
         matchesSource?.let { _matches.removeSource(it) }
         matchesSource = null

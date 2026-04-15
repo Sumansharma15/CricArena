@@ -163,4 +163,9 @@
     <string name="my_matches_title">My Matches</string>
     <string name="my_matches_subtitle">Review your created and joined matches in one place.</string>
     <string name="my_matches_tab">My Matches</string>
+    <string name="delete_match_title">Delete match?</string>
+    <string name="delete_match_message">Remove "%1$s" from matches? This action cannot be undone.</string>
+    <string name="delete_match_confirm">Delete</string>
+    <string name="delete_match_success">Match deleted.</string>
+    <string name="delete_match_failed">Failed to delete match.</string>
 </resources>
