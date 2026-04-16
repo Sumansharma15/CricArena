@@ -55,6 +55,7 @@ class CreateMatchFragment : Fragment() {
                 PlayerScoringActivity.ACTION_NO_BALL -> liveScoringViewModel.applyNoBall(playerId)
                 PlayerScoringActivity.ACTION_BYE -> liveScoringViewModel.applyBye(playerId)
                 PlayerScoringActivity.ACTION_WICKET -> liveScoringViewModel.applyWicket(playerId)
+                PlayerScoringActivity.ACTION_PLAYER_WICKET -> liveScoringViewModel.applyPlayerWicket(playerId)
                 PlayerScoringActivity.ACTION_CATCH -> liveScoringViewModel.applyCatch(playerId)
             }
         }

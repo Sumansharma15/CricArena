@@ -23,7 +23,14 @@ object MatchPayloadBuilder {
                 "id" to stablePlayerId(player.teamName, index + 1, player.name),
                 "name" to player.name,
                 "role" to player.role,
-                "teamName" to player.teamName
+                "teamName" to player.teamName,
+                "team" to player.teamName,
+                "wickets" to 0,
+                "catches" to 0,
+                "runs" to 0,
+                "balls" to 0,
+                "isOut" to false,
+                "fantasyPoints" to 0.0
             )
         }
         val playerStatsTemplate = playersPayload.map { p ->

@@ -30,6 +30,7 @@ class PlayerScoringActivity : BaseActivity<ActivityPlayerScoringBinding>() {
         binding.buttonNoBall.setOnClickListener { sendResult(playerId, ACTION_NO_BALL) }
         binding.buttonBye.setOnClickListener { sendResult(playerId, ACTION_BYE) }
         binding.buttonWicket.setOnClickListener { sendResult(playerId, ACTION_WICKET) }
+        binding.buttonPlayerWicket.setOnClickListener { sendResult(playerId, ACTION_PLAYER_WICKET) }
         binding.buttonCatch.setOnClickListener { sendResult(playerId, ACTION_CATCH) }
     }
 
@@ -58,6 +59,7 @@ class PlayerScoringActivity : BaseActivity<ActivityPlayerScoringBinding>() {
         const val ACTION_NO_BALL = "ACTION_NO_BALL"
         const val ACTION_BYE = "ACTION_BYE"
         const val ACTION_WICKET = "ACTION_WICKET"
+        const val ACTION_PLAYER_WICKET = "ACTION_PLAYER_WICKET"
         const val ACTION_CATCH = "ACTION_CATCH"
     }
 }

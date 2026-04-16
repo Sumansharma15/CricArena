@@ -124,6 +124,10 @@ class LiveScoringViewModel : ViewModel() {
         recordEvent(playerId = playerId, type = BallEventType.WICKET, runs = 0)
     }
 
+    fun applyPlayerWicket(playerId: String) {
+        recordEvent(playerId = playerId, type = BallEventType.PLAYER_WICKET, runs = 0)
+    }
+
     fun applyCatch(playerId: String) {
         recordEvent(playerId = playerId, type = BallEventType.CATCH, runs = 0)
     }

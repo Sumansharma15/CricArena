@@ -69,6 +69,14 @@
             android:layout_marginTop="8dp"
             android:textColor="@color/liveRed"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textPerformance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp" />
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

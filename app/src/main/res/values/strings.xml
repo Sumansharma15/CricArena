@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">CricArena</string>
+    <string name="splash_tagline">Play Smart. Score Big.</string>
     <string name="login_title">Welcome Back</string>
     <string name="login_subtitle">Login to continue to CricArena.</string>
     <string name="register_title">Create Account</string>
@@ -107,12 +108,17 @@
     <string name="live_sr_format">SR: %1$.1f</string>
     <string name="live_out">OUT</string>
     <string name="live_not_out">Not Out</string>
+    <string name="live_performance_format">Wkts: %1$d  Catches: %2$d</string>
     <string name="extras">Extras</string>
     <string name="wide_short">Wd</string>
     <string name="no_ball_short">Nb</string>
     <string name="bye_short">Bye</string>
     <string name="wicket">Wicket</string>
+    <string name="wicket_out_label">Out</string>
+    <string name="player_wicket_short">Wk+</string>
     <string name="catch_label">Catch</string>
+    <string name="player_performance_title">Performance Actions</string>
+    <string name="player_scoring_point_guide">Points clarity: Run = +1, Wicket Taken = +25, Catch = +8. Use Out to mark batter dismissal on scoreboard.</string>
     <string name="player_team">Player Team</string>
     <string name="save_fantasy_team">Save Team</string>
     <string name="selected_count_format">Selected: %1$d / %2$d</string>

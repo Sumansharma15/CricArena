@@ -7,6 +7,7 @@ data class LivePlayer(
     val teamName: String,
     val runs: Int = 0,
     val balls: Int = 0,
+    val wicketsTaken: Int = 0,
     val catches: Int = 0,
     val isOut: Boolean = false
 )
@@ -24,6 +25,7 @@ enum class BallEventType {
     NO_BALL,
     BYE,
     WICKET,
+    PLAYER_WICKET,
     CATCH
 }
 

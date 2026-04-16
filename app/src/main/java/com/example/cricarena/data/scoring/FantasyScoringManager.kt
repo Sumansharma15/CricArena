@@ -69,7 +69,7 @@ class FantasyScoringManager(
                                         role = playerMap["role"]?.toString().orEmpty(),
                                         teamName = playerMap["team"]?.toString().orEmpty()
                                     )
-                                    val wicketCount = if (stats.isOut) 1 else 0
+                                    val wicketCount = stats.wicketsTaken
                                     val base = (stats.runs * runPoint) +
                                         (wicketCount * wicketPoint) +
                                         (stats.catches * catchPoint)
@@ -109,7 +109,7 @@ class FantasyScoringManager(
 
                             // Store global player points breakdown for match details screen.
                             statsMap.forEach { (key, stats) ->
-                                val wicketCount = if (stats.isOut) 1 else 0
+                                val wicketCount = stats.wicketsTaken
                                 val basePoints = (stats.runs * runPoint) +
                                     (wicketCount * wicketPoint) +
                                     (stats.catches * catchPoint)
@@ -171,9 +171,9 @@ class FantasyScoringManager(
             .addOnSuccessListener { playerSnapshot ->
                 val players = playerSnapshot.documents.mapNotNull { doc ->
                     val id = doc.getString("id").orEmpty().ifBlank { doc.id }
-                    val name = doc.getString("name").orEmpty()
+                    val name = doc.getString("name").orEmpty().ifBlank { doc.getString("playerName").orEmpty() }
                     val role = doc.getString("role").orEmpty()
-                    val team = doc.getString("team").orEmpty()
+                    val team = doc.getString("team").orEmpty().ifBlank { doc.getString("teamName").orEmpty() }
                     if (id.isBlank() || name.isBlank() || role.isBlank() || team.isBlank()) {
                         null
                     } else {
@@ -181,7 +181,12 @@ class FantasyScoringManager(
                             id = id,
                             name = name,
                             role = role,
-                            teamName = team
+                            teamName = team,
+                            wicketsTaken = (doc.getLong("wickets") ?: 0L).toInt(),
+                            catches = (doc.getLong("catches") ?: 0L).toInt(),
+                            runs = (doc.getLong("runs") ?: 0L).toInt(),
+                            balls = (doc.getLong("balls") ?: 0L).toInt(),
+                            isOut = doc.getBoolean("isOut") ?: false
                         )
                     }
                 }

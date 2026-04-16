@@ -45,6 +45,11 @@ class LivePlayerAdapter(
             } else {
                 binding.root.context.getString(R.string.live_not_out)
             }
+            binding.textPerformance.text = binding.root.context.getString(
+                R.string.live_performance_format,
+                item.wicketsTaken,
+                item.catches
+            )
             binding.cardLivePlayer.setOnClickListener { onClickPlayer(item) }
         }
     }

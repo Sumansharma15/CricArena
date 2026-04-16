@@ -120,9 +120,11 @@ class ScoringManager(
                     playersMap[event.playerId] = player.copy(isOut = true, balls = player.balls + 1)
                     teamMap[event.teamName] = team.copy(wickets = team.wickets + 1, ballsDelivered = team.ballsDelivered + 1)
                 }
+                BallEventType.PLAYER_WICKET -> {
+                    playersMap[event.playerId] = player.copy(wicketsTaken = player.wicketsTaken + 1)
+                }
                 BallEventType.CATCH -> {
-                    playersMap[event.playerId] = player.copy(catches = player.catches + 1, isOut = true, balls = player.balls + 1)
-                    teamMap[event.teamName] = team.copy(wickets = team.wickets + 1, ballsDelivered = team.ballsDelivered + 1)
+                    playersMap[event.playerId] = player.copy(catches = player.catches + 1)
                 }
             }
         }
@@ -170,7 +172,7 @@ class ScoringManager(
         Log.d("SCORE_DEBUG", "Updated match score: A=${teamAState.totalRuns}/${teamAState.wickets}, B=${teamBState.totalRuns}/${teamBState.wickets}")
 
         result.players.forEach { player ->
-            val wickets = if (player.isOut) 1 else 0
+            val wickets = player.wicketsTaken
             val fantasyPoints = (player.runs * 1.0) + (wickets * 25.0) + (player.catches * 8.0)
             val playerPayload = mapOf(
                 "playerId" to player.id,
@@ -184,6 +186,7 @@ class ScoringManager(
                 "wickets" to wickets,
                 "catches" to player.catches,
                 "balls" to player.balls,
+                "isOut" to player.isOut,
                 "fantasyPoints" to fantasyPoints
             )
             val playerStatRef = matchRef.collection("playerStats").document(player.id)
